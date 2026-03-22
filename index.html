@@ -2167,6 +2167,10 @@ function getWS(){ return G('weddingSchedule',[]); }
 function saveWS(data){ S('weddingSchedule',data); }
 
 // 예식 날짜 기준 할인 금액 계산
+function toggleEditCoupleRef(cb){
+  var w=document.getElementById('wsE_coupleRefWrap');
+  if(w) w.style.display=cb.checked?'block':'none';
+}
 function getWsDiscountInfo(s){
   if(!s.date) return [];
   var month = parseInt((s.date||'').split('-')[1]||0);
@@ -2610,7 +2614,7 @@ function editWS(id){
   html+='<div style="display:flex;flex-direction:column;gap:8px;">';
   html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_blogContract"'+(s.blogContract?' checked':'')+' style="width:14px;height:14px;"><span>📝 블로그 계약후기 작성</span></label>';
   html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_blogFull"'+(s.blogFull?' checked':'')+' style="width:14px;height:14px;"><span>✨ 본식후기 작성</span></label>';
-  html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_coupleDiscount"'+(s.coupleDiscount?' checked':'')+' style="width:14px;height:14px;" onchange="var w=this.closest('div[style]').nextElementSibling;if(w)w.style.display=this.checked?'block':'none';"><span>💑 짝꿍할인 (소개받음)</span></label>';
+  html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_coupleDiscount"'+(s.coupleDiscount?' checked':'')+' style="width:14px;height:14px;" onchange="toggleEditCoupleRef(this)"><span>💑 짝꿍할인 (소개받음)</span></label>';
   html+='<div id="wsE_coupleRefWrap" style="display:'+(s.coupleDiscount?'block':'none')+';padding:6px 10px;background:var(--bg2);border-radius:4px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">소개해준 고객명</div><input type="text" id="wsE_coupleRef" value="'+esc(s.coupleRef||'')+'" placeholder="홍길동" style="width:100%;"></div>';
   html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_receipt"'+(s.receipt?' checked':'')+' style="width:14px;height:14px;"><span>🧾 현금영수증 발행</span></label>';
   html+='</div></div>';
