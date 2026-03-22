@@ -1355,7 +1355,6 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
 </div>
 
 <script>
-//<![CDATA[
 // ══════ STORAGE ══════
 function S(k,v){ try{ localStorage.setItem('h_'+k, JSON.stringify(v)); }catch(e){} }
 function G(k,d){ try{ var v=localStorage.getItem('h_'+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } }
@@ -4082,6 +4081,7 @@ function drawDash(){
        +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0 24px;">'+routineHtml+'</div>'
        +'</div>'
       :'');
+}
 function editDashGreet(){
   var cur=G('dashGreet','안녕, 헴 👋');
   var v=prompt('대시보드 인사 문구', cur);
@@ -6098,7 +6098,6 @@ document.addEventListener('visibilitychange', function(){
 });
 
 openIDB(init);
-//]]>
 </script>
 
 <script>
