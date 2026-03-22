@@ -559,6 +559,36 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
 
       <!-- DAILY -->
       <div class="page active" id="page-daily">
+        <!-- 감정+에너지 빠른 입력 위젯 -->
+        <div id="dailyMoodWidget" style="background:var(--bg2);border:1px solid var(--line);padding:14px 18px;margin-bottom:16px;border-radius:2px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <div id="dqMoodRow" style="display:flex;gap:6px;">
+                <span class="dq-mood" data-mood="😊" style="font-size:22px;cursor:pointer;opacity:.4;transition:all .15s;">😊</span>
+                <span class="dq-mood" data-mood="😌" style="font-size:22px;cursor:pointer;opacity:.4;transition:all .15s;">😌</span>
+                <span class="dq-mood" data-mood="😐" style="font-size:22px;cursor:pointer;opacity:.4;transition:all .15s;">😐</span>
+                <span class="dq-mood" data-mood="😔" style="font-size:22px;cursor:pointer;opacity:.4;transition:all .15s;">😔</span>
+                <span class="dq-mood" data-mood="😤" style="font-size:22px;cursor:pointer;opacity:.4;transition:all .15s;">😤</span>
+                <span class="dq-mood" data-mood="🥲" style="font-size:22px;cursor:pointer;opacity:.4;transition:all .15s;">🥲</span>
+                <span class="dq-mood" data-mood="🔥" style="font-size:22px;cursor:pointer;opacity:.4;transition:all .15s;">🔥</span>
+              </div>
+              <div style="display:flex;gap:5px;align-items:center;">
+                <span style="font-size:10px;color:var(--ink3);letter-spacing:.1em;">에너지</span>
+                <div id="dqLevelRow" style="display:flex;gap:4px;">
+                  <span class="dq-lv" data-lv="1" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink3);transition:all .15s;">1</span>
+                  <span class="dq-lv" data-lv="2" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink3);transition:all .15s;">2</span>
+                  <span class="dq-lv" data-lv="3" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink3);transition:all .15s;">3</span>
+                  <span class="dq-lv" data-lv="4" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink3);transition:all .15s;">4</span>
+                  <span class="dq-lv" data-lv="5" style="width:20px;height:20px;border-radius:50%;border:1px solid var(--line);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--ink3);transition:all .15s;">5</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="dqSavedBadge" style="font-size:11px;color:var(--accent2);display:none;">✓ 저장됨</span>
+              <button id="dqSaveBtn" class="ghost" style="font-size:11px;padding:5px 12px;">기록</button>
+            </div>
+          </div>
+        </div>
         <div class="daily-grid">
           <div class="card">
             <div class="card-title">투두리스트</div>
@@ -848,6 +878,11 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
       <!-- HOUSEHOLD -->
       <div class="page" id="page-household">
         <div style="max-width:680px;">
+          <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);">
+            <div class="proj-tab active" id="hhTab-ledger" onclick="switchHhTab('ledger')">가계부</div>
+            <div class="proj-tab" id="hhTab-report" onclick="switchHhTab('report')">월별 결산 📊</div>
+          </div>
+          <div id="hhTabLedger">
           <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
             <div class="dash-card" style="flex:1;min-width:140px;">
               <div class="dash-num" id="hhIncomeTotal" style="color:#3d6e42;">0</div>
@@ -877,6 +912,12 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
             </div>
           </div>
           <div id="hhList"></div>
+          </div><!-- /hhTabLedger -->
+          <div id="hhTabReport" style="display:none;">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:4px;" id="reportMonthLabel"></div>
+            <div style="font-size:12px;color:var(--ink3);margin-bottom:20px;">이번 달 소비 패턴을 분석해드려요</div>
+            <div id="monthlyReportBody"></div>
+          </div>
         </div>
       </div>
 
@@ -1538,7 +1579,7 @@ function go(page){
   if(page==='home'){ drawDash(); }
   if(page==='habit') drawHabits();
   if(page==='goals'){ drawGoals(); drawGoalBucket(); }
-  if(page==='household') drawHousehold();
+  if(page==='household'){ drawHousehold(); }
   if(page==='nomad'){ drawBucket(); }
   if(page==='content'){ drawContentPlan(); }
   if(page==='moodboard') drawMoodboard();
@@ -1879,14 +1920,20 @@ function drawMonth(){
     var weddingEvts=G('weddingSchedule',[]).filter(function(s){ return s.date===k; }).map(function(s){
       return {time:s.time||'',text:'💒 '+(s.place||'웨딩')+(s.client?' · '+s.client:''),fixed:true,isWedding:true};
     });
-    rawEvts = fixedExps.concat(weddingEvts).concat(rawEvts);
+    // 유튜브 업로드 일정 연동
+    var ytEvts=G('contentPlans',[]).filter(function(x){ return !x.done && (x.uploadDate===k||x.shootDate===k||x.editDate===k); }).map(function(x){
+      var icon=x.uploadDate===k?'📤':x.editDate===k?'✂️':'🎬';
+      return {time:'',text:icon+' '+esc(x.title),fixed:true,isYt:true};
+    });
+    rawEvts = fixedExps.concat(weddingEvts).concat(ytEvts).concat(rawEvts);
     var cellDow=new Date(y,m,d).getDay();
     var fixedForDay=fixedBlocksForDay(cellDow).map(function(b){ return {time:b.from,text:b.lbl,fixed:true}; });
     var evts=sortEvts(fixedForDay.concat(rawEvts));
     var shown=evts.slice(0,2), more=evts.length-2;
     var evtHtml=shown.map(function(ev){
       var wStyle=ev.isWedding?'background:#f5ece2;border-left-color:#c4a882;color:#8b6040;':'';
-      return '<div class="month-evt" style="'+(ev.fixed&&!ev.isWedding?'background:var(--bg2);border-left-color:var(--ink3);color:var(--ink3);':wStyle)+'">'
+      var yStyle=ev.isYt?'background:#f0f4e8;border-left-color:#7a9e7e;color:#4a7a50;':'';
+      return '<div class="month-evt" style="'+(ev.isWedding?wStyle:ev.isYt?yStyle:ev.fixed?'background:var(--bg2);border-left-color:var(--ink3);color:var(--ink3);':'')+'">'
         +(ev.time?ev.time+' ':'')+esc(ev.text)+'</div>';
     }).join('');
     var _pPhase=_periodMap[k]||null;
@@ -1981,16 +2028,24 @@ function drawSingleProj(key, bodyId){
     wsSection.id='wsSectionWrap';
     extraHtml='<div id="wsSectionInner" style="margin-top:24px;"></div>';
   }
-  // 고은청은 콘텐츠 기획 섹션
+  // 고은청은 콘텐츠 기획 + 업로드 스케줄러
   if(key==='goec'){
     extraHtml='<div style="margin-top:24px;">'
-      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;margin-bottom:16px;">콘텐츠 기획</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);">'
+      +'<div class="proj-tab active" id="goecSubTab-content" onclick="switchGoecSub(\'content\')">콘텐츠 기획</div>'
+      +'<div class="proj-tab" id="goecSubTab-schedule" onclick="switchGoecSub(\'schedule\')">업로드 스케줄 📅</div>'
+      +'</div>'
+      +'<div id="goecSubContent">'
       +'<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);">'
       +'<div class="proj-tab active" id="pct-plan2" onclick="switchPCT2(\'plan\')">기획서</div>'
       +'<div class="proj-tab" id="pct-idea2" onclick="switchPCT2(\'idea\')">아이디어뱅크</div>'
       +'<div class="proj-tab" id="pct-done2" onclick="switchPCT2(\'done\')">업로드완료</div>'
       +'</div>'
       +'<div id="projContentBody2"></div>'
+      +'</div>'
+      +'<div id="goecSubSchedule" style="display:none;">'
+      +'<div id="uploadSchedulerBody"></div>'
+      +'</div>'
       +'</div>';
   }
 
@@ -2019,6 +2074,17 @@ function drawSingleProj(key, bodyId){
   if(key==='goec'){
     switchPCT2('plan');
   }
+}
+function switchGoecSub(tab){
+  var isContent=tab==='content';
+  var t1=$id('goecSubTab-content'), t2=$id('goecSubTab-schedule');
+  var b1=$id('goecSubContent'), b2=$id('goecSubSchedule');
+  if(t1) t1.classList.toggle('active',isContent);
+  if(t2) t2.classList.toggle('active',!isContent);
+  if(b1) b1.style.display=isContent?'block':'none';
+  if(b2) b2.style.display=isContent?'none':'block';
+  if(!isContent) drawUploadScheduler();
+  else switchPCT2('plan');
 }
 function addSingleTask(key,bodyId){
   var el=$id('singleTaskInput_'+key); if(!el) return;
@@ -5058,6 +5124,265 @@ function editRec(i){
   setTimeout(function(){ var el=$id('recE_title'); if(el){el.focus();el.select();} },60);
 }
 
+// ══════ HOUSEHOLD TAB ══════
+function switchHhTab(tab){
+  var isLedger=tab==='ledger';
+  var t1=$id('hhTab-ledger'), t2=$id('hhTab-report');
+  var b1=$id('hhTabLedger'), b2=$id('hhTabReport');
+  if(t1) t1.classList.toggle('active',isLedger);
+  if(t2) t2.classList.toggle('active',!isLedger);
+  if(b1) b1.style.display=isLedger?'block':'none';
+  if(b2) b2.style.display=isLedger?'none':'block';
+  if(!isLedger){
+    var now=new Date();
+    var lbl=$id('reportMonthLabel');
+    if(lbl) lbl.textContent=now.getFullYear()+'년 '+(now.getMonth()+1)+'월 결산';
+    drawMonthlyReport();
+  }
+}
+
+// ══════ DAILY MOOD WIDGET ══════
+var dqMood='', dqLevel=0;
+function bindDailyMoodWidget(){
+  var tk=todayKey();
+  var logs=G('energyLogs',[]);
+  var today=logs.find(function(e){return e.date===tk;});
+  if(today){ dqMood=today.mood||''; dqLevel=today.level||0; }
+  renderDqState();
+
+  document.querySelectorAll('.dq-mood').forEach(function(el){
+    el.onclick=function(){
+      dqMood=this.getAttribute('data-mood');
+      renderDqState();
+    };
+  });
+  document.querySelectorAll('.dq-lv').forEach(function(el){
+    el.onclick=function(){
+      dqLevel=parseInt(this.getAttribute('data-lv'));
+      renderDqState();
+    };
+  });
+  var btn=$id('dqSaveBtn');
+  if(btn) btn.onclick=saveDailyMoodQuick;
+
+  // 이미 오늘 저장된 게 있으면 뱃지 표시
+  if(today){ var b=$id('dqSavedBadge'); if(b) b.style.display='inline'; }
+}
+function renderDqState(){
+  document.querySelectorAll('.dq-mood').forEach(function(el){
+    var sel=el.getAttribute('data-mood')===dqMood;
+    el.style.opacity=sel?'1':'0.35';
+    el.style.transform=sel?'scale(1.25)':'scale(1)';
+  });
+  document.querySelectorAll('.dq-lv').forEach(function(el){
+    var lv=parseInt(el.getAttribute('data-lv'));
+    var active=lv<=dqLevel;
+    el.style.background=active?'var(--accent)':'';
+    el.style.color=active?'#fff':'var(--ink3)';
+    el.style.borderColor=active?'var(--accent)':'var(--line)';
+  });
+}
+function saveDailyMoodQuick(){
+  if(!dqMood||!dqLevel){ showToast('감정과 에너지를 선택해주세요 😊'); return; }
+  var tk=todayKey();
+  var logs=G('energyLogs',[]);
+  var existing=logs.find(function(e){return e.date===tk;});
+  if(existing){
+    // 기존 기록에 mood/level만 업데이트, 텍스트·생리 유지
+    existing.mood=dqMood; existing.level=dqLevel;
+  } else {
+    logs.unshift({date:tk,mood:dqMood,level:dqLevel,text:'',period:'',periodPhase:''});
+  }
+  S('energyLogs',logs);
+  var b=$id('dqSavedBadge'); if(b){ b.style.display='inline'; }
+  showToast('오늘의 감정 기록됐어요 '+dqMood);
+  drawEnergy();
+}
+
+// ══════ YOUTUBE UPLOAD SCHEDULER ══════
+function drawUploadScheduler(){
+  var body=$id('uploadSchedulerBody'); if(!body) return;
+  var plans=G('contentPlans',[]);
+  var now=new Date();
+  var upcoming=plans.filter(function(x){return !x.done;}).sort(function(a,b){
+    var da=a.uploadDate||a.shootDate||'9999', db=b.uploadDate||b.shootDate||'9999';
+    return da<db?-1:1;
+  });
+  var done=plans.filter(function(x){return x.done;}).slice(0,5);
+
+  if(upcoming.length===0 && done.length===0){
+    body.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:16px 0;">기획서를 먼저 작성해봐요 🎬</div>';
+    return;
+  }
+
+  var html='<div style="margin-bottom:24px;">';
+  html+='<div style="font-size:10px;letter-spacing:.2em;color:var(--ink3);margin-bottom:12px;">UPCOMING</div>';
+  if(upcoming.length===0){
+    html+='<div style="font-size:13px;color:var(--ink3);">예정된 영상이 없어요</div>';
+  } else {
+    html+=upcoming.map(function(x){
+      var stages=[
+        {key:'shootDate',label:'촬영',icon:'🎬'},
+        {key:'editDate',label:'편집완료',icon:'✂️'},
+        {key:'uploadDate',label:'업로드',icon:'📤'}
+      ];
+      var today=todayKey();
+      var stageHtml=stages.map(function(st){
+        var d=x[st.key]||'';
+        var isPast=d&&d<today, isToday=d&&d===today;
+        var color=isPast?'#6a9e6a':isToday?'var(--accent2)':'var(--ink3)';
+        return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:70px;">'
+          +'<span style="font-size:16px;">'+(d?(isPast?'✅':isToday?'⭐':st.icon):st.icon)+'</span>'
+          +'<span style="font-size:9px;color:var(--ink3);letter-spacing:.1em;">'+st.label+'</span>'
+          +'<span style="font-size:11px;color:'+color+';font-weight:'+(isToday?'600':'400')+';">'+(d||'미정')+'</span>'
+          +'</div>';
+      }).join('<div style="width:30px;height:1px;background:var(--line);margin-top:18px;"></div>');
+
+      return '<div style="padding:14px;margin-bottom:10px;border:1px solid var(--line);background:var(--paper);">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;">'
+        +'<div>'
+        +'<div style="font-size:14px;color:var(--ink);font-family:var(--serif,serif);">'+esc(x.title)+'</div>'
+        +(x.hook?'<div style="font-size:11px;color:var(--ink3);margin-top:3px;">훅: '+esc(x.hook)+'</div>':'')
+        +'</div>'
+        +'<button onclick="editUploadDates(\''+x.id+'\')" class="ghost" style="font-size:10px;padding:3px 8px;flex-shrink:0;">날짜 입력</button>'
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:0;">'+stageHtml+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  html+='</div>';
+
+  if(done.length>0){
+    html+='<div style="opacity:.6;">';
+    html+='<div style="font-size:10px;letter-spacing:.2em;color:var(--ink3);margin-bottom:12px;">UPLOADED</div>';
+    html+=done.map(function(x){
+      return '<div style="padding:10px 14px;margin-bottom:6px;border:1px solid var(--line);display:flex;align-items:center;gap:10px;">'
+        +'<span style="font-size:16px;">✅</span>'
+        +'<span style="font-size:13px;color:var(--ink);">'+esc(x.title)+'</span>'
+        +(x.uploadDate?'<span style="font-size:11px;color:var(--ink3);margin-left:auto;">'+x.uploadDate+'</span>':'')
+        +'</div>';
+    }).join('');
+    html+='</div>';
+  }
+  body.innerHTML=html;
+}
+function editUploadDates(planId){
+  var plans=G('contentPlans',[]);
+  var x=plans.find(function(p){return String(p.id)===String(planId);}); if(!x) return;
+  var old=$id('uploadDateModal'); if(old) old.remove();
+  var html='<div id="uploadDateModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(380px,92vw);border:1px solid var(--line);">';
+  html+='<div style="font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px;">날짜 입력</div>';
+  html+='<div style="font-size:14px;color:var(--ink);font-family:var(--serif,serif);margin-bottom:16px;">'+esc(x.title)+'</div>';
+  [['shootDate','🎬 촬영일'],['editDate','✂️ 편집완료'],['uploadDate','📤 업로드일']].forEach(function(f){
+    html+='<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">'+f[1]+'</div>';
+    html+='<input type="date" id="ud_'+f[0]+'" value="'+(x[f[0]]||'')+'" style="width:100%;"></div>';
+  });
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">';
+  html+='<button class="ghost" onclick="document.getElementById(\'uploadDateModal\').remove()">취소</button>';
+  html+='<button id="udSaveBtn">저장</button>';
+  html+='</div></div></div>';
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+  $id('udSaveBtn').onclick=function(){
+    x.shootDate=($id('ud_shootDate')||{value:''}).value||x.shootDate||'';
+    x.editDate=($id('ud_editDate')||{value:''}).value||'';
+    x.uploadDate=($id('ud_uploadDate')||{value:''}).value||'';
+    S('contentPlans',plans);
+    $id('uploadDateModal').remove();
+    drawUploadScheduler();
+    // 먼슬리 달력 갱신
+    drawMonth();
+  };
+}
+
+// ══════ 월별 결산 리포트 ══════
+function drawMonthlyReport(){
+  var body=$id('monthlyReportBody'); if(!body) return;
+  var items=G('household',[]);
+  var now=new Date();
+  var curYm=now.getFullYear()+'-'+pad(now.getMonth()+1);
+  var prevDate=new Date(now.getFullYear(), now.getMonth()-1, 1);
+  var prevYm=prevDate.getFullYear()+'-'+pad(prevDate.getMonth()+1);
+
+  var cur=items.filter(function(x){return x.ym===curYm;});
+  var prev=items.filter(function(x){return x.ym===prevYm;});
+
+  var curIncome=cur.filter(function(x){return x.type==='in';}).reduce(function(s,x){return s+x.amt;},0);
+  var curExp=cur.filter(function(x){return x.type==='out';}).reduce(function(s,x){return s+x.amt;},0);
+  var prevIncome=prev.filter(function(x){return x.type==='in';}).reduce(function(s,x){return s+x.amt;},0);
+  var prevExp=prev.filter(function(x){return x.type==='out';}).reduce(function(s,x){return s+x.amt;},0);
+  var curBal=curIncome-curExp;
+  var prevBal=prevIncome-prevExp;
+
+  // 카테고리별 지출
+  var expByCat={};
+  cur.filter(function(x){return x.type==='out';}).forEach(function(x){
+    expByCat[x.cat||'기타']=(expByCat[x.cat||'기타']||0)+x.amt;
+  });
+  var catArr=Object.entries(expByCat).sort(function(a,b){return b[1]-a[1];});
+  var maxCatAmt=catArr.length?catArr[0][1]:1;
+
+  // 인사이트 생성
+  var insights=[];
+  if(curExp>prevExp) insights.push('지난달보다 지출이 '+fmtMoney(curExp-prevExp)+' 늘었어요.');
+  else if(curExp<prevExp) insights.push('지난달보다 지출이 '+fmtMoney(prevExp-curExp)+' 줄었어요 👍');
+  if(curIncome>prevIncome) insights.push('수입이 전달보다 '+fmtMoney(curIncome-prevIncome)+' 증가했어요 🎉');
+  if(catArr.length) insights.push('이번 달 가장 많이 쓴 항목은 '+catArr[0][0]+' ('+fmtMoney(catArr[0][1])+')');
+  if(curBal>0) insights.push('이번 달 '+fmtMoney(curBal)+' 저축했어요 💰');
+  else if(curBal<0) insights.push('이번 달 지출이 수입보다 '+fmtMoney(-curBal)+' 많아요.');
+
+  var html='';
+  // 요약 카드
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">';
+  [{label:'수입',val:curIncome,prev:prevIncome,color:'#3d6e42'},
+   {label:'지출',val:curExp,prev:prevExp,color:'var(--red)'},
+   {label:'저축',val:curBal,prev:prevBal,color:'var(--accent)'}].forEach(function(s){
+    var diff=s.val-s.prev, sign=diff>=0?'+':'';
+    html+='<div style="padding:14px;background:var(--paper);border:1px solid var(--line);text-align:center;">'
+      +'<div style="font-size:10px;letter-spacing:.15em;color:var(--ink3);margin-bottom:6px;">'+s.label+'</div>'
+      +'<div style="font-size:18px;color:'+s.color+';font-family:var(--serif,serif);">'+fmtMoney(s.val)+'</div>'
+      +(s.prev?'<div style="font-size:10px;color:var(--ink3);margin-top:4px;">전달 대비 '+sign+fmtMoney(diff)+'</div>':'')
+      +'</div>';
+  });
+  html+='</div>';
+
+  // 카테고리별 지출 바
+  if(catArr.length){
+    html+='<div style="margin-bottom:20px;">';
+    html+='<div style="font-size:10px;letter-spacing:.2em;color:var(--ink3);margin-bottom:12px;">카테고리별 지출</div>';
+    html+=catArr.map(function(c){
+      var pct=Math.round(c[1]/maxCatAmt*100);
+      var ratio=curExp>0?Math.round(c[1]/curExp*100):0;
+      return '<div style="margin-bottom:10px;">'
+        +'<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+        +'<span style="font-size:12px;color:var(--ink2);">'+esc(c[0])+'</span>'
+        +'<span style="font-size:12px;color:var(--ink2);">'+fmtMoney(c[1])+' <span style="color:var(--ink3);">'+ratio+'%</span></span>'
+        +'</div>'
+        +'<div style="height:6px;background:var(--bg2);border-radius:3px;">'
+        +'<div style="height:6px;width:'+pct+'%;background:var(--accent);border-radius:3px;transition:width .4s;"></div>'
+        +'</div></div>';
+    }).join('');
+    html+='</div>';
+  }
+
+  // 인사이트
+  if(insights.length){
+    html+='<div style="padding:14px 16px;background:var(--bg2);border-left:3px solid var(--accent2);">';
+    html+='<div style="font-size:10px;letter-spacing:.2em;color:var(--ink3);margin-bottom:8px;">이달의 인사이트</div>';
+    html+=insights.map(function(s){
+      return '<div style="font-size:12px;color:var(--ink2);margin-bottom:5px;line-height:1.6;">• '+s+'</div>';
+    }).join('');
+    html+='</div>';
+  }
+
+  if(!cur.length){
+    body.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:16px 0;">이번 달 가계부 데이터가 없어요</div>';
+    return;
+  }
+  body.innerHTML=html;
+}
+
 // ══════ MOOD CHART ══════
 var moodChartOff = 0; // 0 = 이번 달, -1 = 저번 달 ...
 
@@ -5380,6 +5705,7 @@ function init(){
   drawHabits();
   drawEnergy();
   drawLibrary();
+  bindDailyMoodWidget();
   setTimeout(drawTL,100);
   setInterval(drawTL,60000);
 }
