@@ -1979,21 +1979,80 @@ function delSingleIdea(key,bodyId,id){
 }
 function switchPCT2(tab){
   ['plan','idea','done'].forEach(function(t){
-    var el=$id('pct-plan2'===('pct-'+t+'2')?'pct-plan2':('pct-'+t+'2'));
     var btn=$id('pct-'+t+'2'); if(btn) btn.classList.toggle('active',t===tab);
   });
-  var b=$id('projContentBody2'); if(b) { drawProjContent2(tab); }
+  drawProjContent2(tab);
 }
 function drawProjContent2(tab){
-  var b=$id('projContentBody2'); if(!b) return;
-  // projContentBody2는 projContentBody와 같은 데이터 공유 — 탭만 다른 곳에 렌더
-  var oldBody=$id('projContentBody');
-  // 임시로 projContentBody를 body2로 교체해서 drawProjContent 활용
-  if(oldBody) oldBody.id='projContentBody_hidden';
-  b.id='projContentBody';
-  drawProjContent(tab);
-  b.id='projContentBody2';
-  if(oldBody) oldBody.id='projContentBody';
+  var body=$id('projContentBody2'); if(!body) return;
+  if(tab==='plan'){
+    var plans=G('contentPlans',[]).filter(function(x){return !x.done;});
+    var addForm='<div class="compose-box" style="margin-bottom:16px;">'
+      +'<div class="card-title" style="margin-bottom:12px;">새 기획서</div>'
+      +'<input type="text" id="pcpTitle2" placeholder="영상 제목..." style="width:100%;margin-bottom:8px;">'
+      +'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">'
+      +'<input type="text" id="pcpHook2" class="flex1" placeholder="훅 (첫 10초)">'
+      +'<input type="text" id="pcpShootDate2" style="width:110px;" placeholder="촬영일">'
+      +'</div>'
+      +'<textarea id="pcpOutline2" placeholder="구성..." style="width:100%;min-height:60px;resize:none;display:block;margin-bottom:8px;"></textarea>'
+      +'<div style="display:flex;gap:6px;">'
+      +'<input type="text" id="pcpCta2" class="flex1" placeholder="CTA...">'
+      +'<button onclick="addProjCP2()">추가</button>'
+      +'</div></div>';
+    var listHtml=plans.length===0
+      ?'<div style="font-size:13px;color:var(--ink3);padding:12px 0;">기획서를 작성해봐요 🎬</div>'
+      :plans.map(function(x,i){
+          return '<div class="content-card" style="padding:14px;margin-bottom:10px;border:1px solid var(--line);background:var(--paper);">'
+            +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;">'
+            +'<div style="flex:1;">'
+            +'<div style="font-size:15px;color:var(--ink);font-family:var(--serif,serif);margin-bottom:4px;">'+esc(x.title)+'</div>'
+            +(x.shootDate?'<div style="font-size:11px;color:var(--accent2);">📅 촬영일: '+esc(x.shootDate)+'</div>':'')
+            +'</div>'
+            +'<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;">'
+            +'<button onclick="editProjCP('+i+')" class="ghost" style="font-size:10px;padding:3px 8px;">수정</button>'
+            +'<button onclick="projCPDone('+i+')" class="ghost" style="font-size:10px;padding:3px 8px;">업로드✓</button>'
+            +'<span class="del-btn" onclick="delProjCP('+i+')">×</span>'
+            +'</div></div>'
+            +(x.hook?'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:6px;padding:6px 10px;background:var(--bg2);border-left:2px solid var(--accent2);font-size:12px;"><span style="font-size:10px;color:var(--ink3);flex-shrink:0;letter-spacing:.1em;">HOOK</span><span style="color:var(--ink2);">'+esc(x.hook)+'</span></div>':'')
+            +(x.outline?'<div style="font-size:12px;color:var(--ink2);line-height:1.6;padding:8px 10px;background:var(--bg2);white-space:pre-wrap;margin-bottom:6px;">'+esc(x.outline)+'</div>':'')
+            +(x.cta?'<div style="font-size:11px;color:var(--ink3);padding:4px 10px;border:1px dashed var(--line);display:inline-block;">CTA: '+esc(x.cta)+'</div>':'')
+            +'</div>';
+        }).join('');
+    body.innerHTML=addForm+listHtml;
+  } else if(tab==='idea'){
+    var ideas=G('contentIdeas',[]);
+    var addForm='<div style="display:flex;gap:6px;margin-bottom:16px;">'
+      +'<input type="text" id="pciInput2" class="flex1" placeholder="영상 아이디어...">'
+      +'<button onclick="addProjCI2()">+</button>'
+      +'</div>';
+    var listHtml=ideas.length===0
+      ?'<div style="font-size:13px;color:var(--ink3);">아이디어를 던져봐요</div>'
+      :ideas.map(function(x,i){
+          return '<div class="idea-card"><span style="flex:1;">'+esc(x.text)+'</span>'
+            +'<span class="del-btn" onclick="delProjCI('+i+')">×</span></div>';
+        }).join('');
+    body.innerHTML=addForm+listHtml;
+  } else if(tab==='done'){
+    var done=G('contentPlans',[]).filter(function(x){return x.done;});
+    body.innerHTML=done.length===0
+      ?'<div style="font-size:13px;color:var(--ink3);padding:12px 0;">아직 업로드 완료된 영상이 없어요</div>'
+      :done.map(function(x){
+          return '<div class="content-card" style="opacity:.6;"><div style="display:flex;align-items:center;gap:10px;"><span style="font-size:18px;">✅</span><span style="font-size:14px;color:var(--ink);">'+esc(x.title)+'</span></div></div>';
+        }).join('');
+  }
+}
+function addProjCP2(){
+  var title=$id('pcpTitle2'); if(!title||!title.value.trim()) return;
+  var plans=G('contentPlans',[]);
+  plans.unshift({id:Date.now(),title:title.value.trim(),hook:($id('pcpHook2')||{value:''}).value.trim(),outline:($id('pcpOutline2')||{value:''}).value.trim(),cta:($id('pcpCta2')||{value:''}).value.trim(),shootDate:($id('pcpShootDate2')||{value:''}).value.trim(),done:false});
+  S('contentPlans',plans);
+  ['pcpTitle2','pcpHook2','pcpOutline2','pcpCta2','pcpShootDate2'].forEach(function(id){ if($id(id)) $id(id).value=''; });
+  drawProjContent2('plan');
+}
+function addProjCI2(){
+  var t=($id('pciInput2')||{value:''}).value.trim(); if(!t) return;
+  var a=G('contentIdeas',[]); a.unshift({id:Date.now(),text:t}); S('contentIdeas',a);
+  if($id('pciInput2')) $id('pciInput2').value=''; drawProjContent2('idea');
 }
 function drawProj(){
   var validProjs=['social'];
