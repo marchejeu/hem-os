@@ -506,6 +506,7 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
         <div class="nav-item" id="nav-inbox">◦ 정보 덤핑</div>
         <div class="nav-item" id="nav-library">◦ 독서 · 콘텐츠</div>
         <div class="nav-item" id="nav-nomad">◦ 한달살기</div>
+        <div class="nav-item" id="nav-tips">◦ 생활팁 · 레시피</div>
         <!-- 콘텐츠 기획은 프로젝트 > 고은청 탭으로 이동 -->
         <div class="nav-item" id="nav-moodboard">◦ Interior Moodboard</div>
         <div class="nav-item" id="nav-outfit">◦ Outfit Archive</div>
@@ -1045,6 +1046,76 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
         </div>
       </div>
 
+      <!-- TIPS & RECIPES -->
+      <div class="page" id="page-tips">
+        <div style="max-width:860px;">
+          <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);">
+            <div class="proj-tab active" id="tipTab-tips" onclick="switchTipTab('tips')">생활팁</div>
+            <div class="proj-tab" id="tipTab-recipes" onclick="switchTipTab('recipes')">레시피 🍳</div>
+          </div>
+
+          <!-- 생활팁 탭 -->
+          <div id="tipTabTips">
+            <div class="compose-box" style="margin-bottom:20px;">
+              <div class="card-title" style="margin-bottom:12px;">새 생활팁 추가</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <input type="text" id="tipTitle" class="flex1" placeholder="팁 제목...">
+                <select id="tipCat" style="width:110px;">
+                  <option value="청소">🧹 청소</option>
+                  <option value="수납">📦 수납</option>
+                  <option value="뷰티">💄 뷰티</option>
+                  <option value="건강">🌿 건강</option>
+                  <option value="절약">💰 절약</option>
+                  <option value="요리">🍳 요리</option>
+                  <option value="기타">📌 기타</option>
+                </select>
+              </div>
+              <textarea id="tipContent" placeholder="내용을 적어요..." style="width:100%;min-height:80px;resize:vertical;display:block;margin-bottom:8px;"></textarea>
+              <div style="display:flex;justify-content:flex-end;">
+                <button id="tipAddBtn">저장</button>
+              </div>
+            </div>
+            <div id="tipFilterBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+            <div id="tipList"></div>
+          </div>
+
+          <!-- 레시피 탭 -->
+          <div id="tipTabRecipes" style="display:none;">
+            <div class="compose-box" style="margin-bottom:20px;">
+              <div class="card-title" style="margin-bottom:12px;">새 레시피 추가</div>
+              <div style="display:grid;grid-template-columns:1fr 100px 80px 80px;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                <input type="text" id="recTitle" placeholder="요리 이름...">
+                <select id="recCat" style="width:100%;">
+                  <option value="한식">🍚 한식</option>
+                  <option value="양식">🍝 양식</option>
+                  <option value="일식">🍱 일식</option>
+                  <option value="중식">🥢 중식</option>
+                  <option value="간식">🍪 간식</option>
+                  <option value="음료">🥤 음료</option>
+                  <option value="기타">🍽 기타</option>
+                </select>
+                <input type="text" id="recTime" placeholder="⏱ 시간" style="width:100%;">
+                <input type="text" id="recServing" placeholder="👤 인분" style="width:100%;">
+              </div>
+              <textarea id="recIngredients" placeholder="재료 (줄바꿈으로 구분)&#10;예) 계란 2개&#10;    소금 약간" style="width:100%;min-height:80px;resize:vertical;display:block;margin-bottom:8px;"></textarea>
+              <textarea id="recSteps" placeholder="조리법 (줄바꿈으로 구분)&#10;예) 1. 물을 끓인다&#10;    2. 재료를 넣는다" style="width:100%;min-height:100px;resize:vertical;display:block;margin-bottom:8px;"></textarea>
+              <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div class="img-drop-zone" id="recDZ" style="margin:0;padding:8px 14px;font-size:11px;">
+                    <input type="file" accept="image/*" id="recFileInput">
+                    📷 사진 추가
+                  </div>
+                  <span id="recPhotoPreview" style="font-size:11px;color:var(--accent2);"></span>
+                </div>
+                <button id="recAddBtn">저장</button>
+              </div>
+            </div>
+            <div id="recFilterBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+            <div id="recList"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- WEEKLY RETRO -->
       <div class="page" id="page-weekly-retro">
         <div style="max-width:680px;">
@@ -1375,7 +1446,7 @@ function saveSBConfig(){
   closeSBModal();
   alert('연결 완료! 지금 데이터를 Supabase에 올릴게요.');
   // 기존 localStorage 데이터 전부 Supabase에 밀어넣기
-  var keys=['todos','blocks','fixedBlocks','routines','goals','gratitude','inbox','past','calEvts','dailyMemo','mealLog','weddingSchedule','weddingSettlement','revData','revGoals','habits','energyLogs','library','libCats','household','assets','debts','fixedExp','nomadBucket','nomadPlan','nomadLog','moodboard','outfit','contentPlans','contentIdeas','projData','dashGreet','goalBucket','toRead'];
+  var keys=['todos','blocks','fixedBlocks','routines','goals','gratitude','inbox','past','calEvts','dailyMemo','mealLog','weddingSchedule','weddingSettlement','revData','revGoals','habits','energyLogs','library','libCats','household','assets','debts','fixedExp','nomadBucket','nomadPlan','nomadLog','moodboard','outfit','contentPlans','contentIdeas','projData','dashGreet','goalBucket','toRead','tips','recipes'];
   keys.forEach(function(k){ var v=_G_orig(k,null); if(v!==null) sbSet(k,v); });
 }
 
@@ -1452,7 +1523,7 @@ function go(page){
   $id('page-'+page).classList.add('active');
   var navEl = $id('nav-'+page);
   if(navEl) navEl.classList.add('active');
-  var labels={home:'대시보드',daily:'데일리',weekly:'위클리',monthly:'먼슬리',goals:'목표',projects:'블로그 · 트위터','wedding-proj':'웨딩 마르체쥬','goec-proj':'고은청','shop-proj':'쇼핑몰 마르체쥬',inbox:'정보 덤핑',past:'과거 기록',habit:'습관 트래커',revenue:'수익 트래커',energy:'에너지 일기','library':'독서 · 콘텐츠','weekly-retro':'위클리 회고','mood-chart':'기분 패턴',household:'가계부',wealth:'자산 관리',nomad:'한달살기',moodboard:'Interior Moodboard',outfit:'Outfit Archive',content:'콘텐츠 기획'};
+  var labels={home:'대시보드',daily:'데일리',weekly:'위클리',monthly:'먼슬리',goals:'목표',projects:'블로그 · 트위터','wedding-proj':'웨딩 마르체쥬','goec-proj':'고은청','shop-proj':'쇼핑몰 마르체쥬',inbox:'정보 덤핑',past:'과거 기록',habit:'습관 트래커',revenue:'수익 트래커',energy:'에너지 일기','library':'독서 · 콘텐츠','weekly-retro':'위클리 회고','mood-chart':'기분 패턴',household:'가계부',wealth:'자산 관리',nomad:'한달살기','tips':'생활팁 · 레시피',moodboard:'Interior Moodboard',outfit:'Outfit Archive',content:'콘텐츠 기획'};
   $id('pageTitle').textContent = labels[page]||page;
   closeSidebar();
   if(page==='daily') setTimeout(drawTL,60);
@@ -1475,6 +1546,7 @@ function go(page){
   if(page==='wealth'){ drawWealthSummary(); drawAssets(); }
   if(page==='energy') drawEnergy();
   if(page==='library'){ drawLibrary(); }
+  if(page==='tips'){ drawTips(); }
   if(page==='weekly-retro') drawRetro();
   if(page==='mood-chart') drawMoodChart();
 }
@@ -3169,6 +3241,7 @@ function bindEvents(){
   $id('nav-energy').onclick       = function(){ go('energy'); };
   $id('nav-library').onclick      = function(){ go('library'); };
   $id('nav-nomad').onclick        = function(){ go('nomad'); };
+  $id('nav-tips').onclick         = function(){ go('tips'); };
   if($id('nav-content')) $id('nav-content').onclick = function(){ go('content'); };
   $id('nav-moodboard').onclick    = function(){ go('moodboard'); };
   $id('nav-weekly-retro').onclick = function(){ go('weekly-retro'); };
@@ -4716,6 +4789,273 @@ function drawRetro(){
     var btn=$id('retroSaveBtn');
     btn.textContent='저장됐어요 ✓'; setTimeout(function(){ btn.textContent='저장'; },1500);
   };
+}
+
+// ══════ TIPS & RECIPES ══════
+var curTipTab = 'tips';
+var tipSelCat = null;
+var recSelCat = null;
+var recPhotoData = null; // 임시 사진 저장
+
+function switchTipTab(tab){
+  curTipTab = tab;
+  var isTips = tab === 'tips';
+  var t1=$id('tipTab-tips'), t2=$id('tipTab-recipes');
+  var b1=$id('tipTabTips'), b2=$id('tipTabRecipes');
+  if(t1) t1.classList.toggle('active', isTips);
+  if(t2) t2.classList.toggle('active', !isTips);
+  if(b1) b1.style.display = isTips ? 'block' : 'none';
+  if(b2) b2.style.display = isTips ? 'none' : 'block';
+  if(isTips) drawTipList();
+  else drawRecList();
+}
+
+function drawTips(){
+  // 탭 상태 유지
+  switchTipTab(curTipTab);
+  // 버튼 바인딩
+  var addBtn=$id('tipAddBtn');
+  if(addBtn) addBtn.onclick = addTip;
+  var addRec=$id('recAddBtn');
+  if(addRec) addRec.onclick = addRec_fn;
+  // 사진 첨부
+  var fi=$id('recFileInput');
+  if(fi) fi.onchange = function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      recPhotoData=ev.target.result;
+      var prev=$id('recPhotoPreview');
+      if(prev) prev.textContent='📷 사진 첨부됨';
+    };
+    reader.readAsDataURL(file);
+  };
+}
+
+// ── 생활팁 ──
+var TIP_CATS = ['전체','청소','수납','뷰티','건강','절약','요리','기타'];
+
+function drawTipFilterBar(){
+  var bar=$id('tipFilterBar'); if(!bar) return;
+  bar.innerHTML = TIP_CATS.map(function(c){
+    var active = (tipSelCat===null&&c==='전체')||(tipSelCat===c);
+    return '<span onclick="setTipCat(\''+(c==='전체'?'null':c)+'\')" style="cursor:pointer;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--line);background:'+(active?'var(--accent2)':'var(--paper)')+';color:'+(active?'#fff':'var(--ink2)')+';">'+c+'</span>';
+  }).join('');
+}
+function setTipCat(c){
+  tipSelCat = c==='null'?null:c;
+  drawTipList();
+}
+function drawTipList(){
+  drawTipFilterBar();
+  var el=$id('tipList'); if(!el) return;
+  var items=G('tips',[]);
+  var filtered = tipSelCat ? items.filter(function(x){return x.cat===tipSelCat;}) : items;
+  if(filtered.length===0){
+    el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:16px 0;">팁을 추가해봐요 💡</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(function(x,i){
+    var realIdx = items.indexOf(x);
+    return '<div class="content-card" style="padding:14px;margin-bottom:10px;border:1px solid var(--line);background:var(--paper);">'
+      +'<div style="display:flex;align-items:flex-start;gap:10px;">'
+      +'<div style="flex:1;">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+      +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg3);color:var(--ink2);border:1px solid var(--line);">'+esc(x.cat)+'</span>'
+      +'<span style="font-size:14px;color:var(--ink);font-family:var(--serif,serif);">'+esc(x.title)+'</span>'
+      +'</div>'
+      +'<div style="font-size:12px;color:var(--ink2);line-height:1.7;white-space:pre-wrap;'+(x.open?'':'max-height:3.4em;overflow:hidden;')+'">'+esc(x.content)+'</div>'
+      +(x.content&&x.content.length>80?'<span onclick="togTipOpen('+realIdx+')" style="font-size:11px;color:var(--accent2);cursor:pointer;margin-top:4px;display:inline-block;">'+(x.open?'▲ 접기':'▼ 더보기')+'</span>':'')
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">'
+      +'<button onclick="editTip('+realIdx+')" class="ghost" style="font-size:10px;padding:3px 8px;">수정</button>'
+      +'<span class="del-btn" onclick="delTip('+realIdx+')">×</span>'
+      +'</div>'
+      +'</div></div>';
+  }).join('');
+}
+function addTip(){
+  var title=($id('tipTitle')||{value:''}).value.trim(); if(!title) return;
+  var content=($id('tipContent')||{value:''}).value.trim();
+  var cat=($id('tipCat')||{value:'기타'}).value;
+  var items=G('tips',[]);
+  items.unshift({id:Date.now(),title:title,content:content,cat:cat,open:false});
+  S('tips',items);
+  ['tipTitle','tipContent'].forEach(function(id){ if($id(id)) $id(id).value=''; });
+  drawTipList();
+}
+function togTipOpen(i){
+  var items=G('tips',[]); items[i].open=!items[i].open; S('tips',items); drawTipList();
+}
+function delTip(i){
+  var items=G('tips',[]); items.splice(i,1); S('tips',items); drawTipList();
+}
+function editTip(i){
+  var items=G('tips',[]), x=items[i]; if(!x) return;
+  var old=$id('tipEditModal'); if(old) old.remove();
+  var html='<div id="tipEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(500px,94vw);border:1px solid var(--line);max-height:90vh;overflow-y:auto;">';
+  html+='<div style="font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;">팁 수정</div>';
+  html+='<div style="display:flex;gap:8px;margin-bottom:8px;">';
+  html+='<input type="text" id="tipE_title" value="'+esc(x.title||'')+'" class="flex1">';
+  html+='<select id="tipE_cat" style="width:110px;">';
+  ['청소','수납','뷰티','건강','절약','요리','기타'].forEach(function(c){
+    html+='<option value="'+c+'"'+(x.cat===c?' selected':'')+'>'+c+'</option>';
+  });
+  html+='</select></div>';
+  html+='<textarea id="tipE_content" style="width:100%;min-height:120px;resize:vertical;display:block;margin-bottom:14px;">'+esc(x.content||'')+'</textarea>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html+='<button class="ghost" onclick="document.getElementById(\'tipEditModal\').remove()">취소</button>';
+  html+='<button id="tipESaveBtn">저장</button>';
+  html+='</div></div></div>';
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+  $id('tipESaveBtn').onclick=function(){
+    var title=$id('tipE_title').value.trim(); if(!title){alert('제목을 입력해주세요');return;}
+    items[i]=Object.assign({},x,{title:title,content:$id('tipE_content').value.trim(),cat:$id('tipE_cat').value});
+    S('tips',items); $id('tipEditModal').remove(); drawTipList();
+  };
+  setTimeout(function(){ var el=$id('tipE_title'); if(el){el.focus();el.select();} },60);
+}
+
+// ── 레시피 ──
+var REC_CATS = ['전체','한식','양식','일식','중식','간식','음료','기타'];
+
+function drawRecFilterBar(){
+  var bar=$id('recFilterBar'); if(!bar) return;
+  bar.innerHTML = REC_CATS.map(function(c){
+    var active = (recSelCat===null&&c==='전체')||(recSelCat===c);
+    return '<span onclick="setRecCat(\''+(c==='전체'?'null':c)+'\')" style="cursor:pointer;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--line);background:'+(active?'var(--accent2)':'var(--paper)')+';color:'+(active?'#fff':'var(--ink2)')+';">'+c+'</span>';
+  }).join('');
+}
+function setRecCat(c){
+  recSelCat = c==='null'?null:c;
+  drawRecList();
+}
+function addRec_fn(){
+  var title=($id('recTitle')||{value:''}).value.trim(); if(!title) return;
+  var items=G('recipes',[]);
+  var entry={
+    id:Date.now(),
+    title:title,
+    cat:($id('recCat')||{value:'기타'}).value,
+    time:($id('recTime')||{value:''}).value.trim(),
+    serving:($id('recServing')||{value:''}).value.trim(),
+    ingredients:($id('recIngredients')||{value:''}).value.trim(),
+    steps:($id('recSteps')||{value:''}).value.trim(),
+    photo:recPhotoData||null,
+    open:false
+  };
+  items.unshift(entry);
+  S('recipes',items);
+  ['recTitle','recIngredients','recSteps','recTime','recServing'].forEach(function(id){ if($id(id)) $id(id).value=''; });
+  recPhotoData=null;
+  var prev=$id('recPhotoPreview'); if(prev) prev.textContent='';
+  var fi=$id('recFileInput'); if(fi) fi.value='';
+  drawRecList();
+}
+function drawRecList(){
+  drawRecFilterBar();
+  var el=$id('recList'); if(!el) return;
+  var items=G('recipes',[]);
+  var filtered = recSelCat ? items.filter(function(x){return x.cat===recSelCat;}) : items;
+  if(filtered.length===0){
+    el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:16px 0;">레시피를 추가해봐요 🍳</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(function(x){
+    var realIdx = items.indexOf(x);
+    var ingLines=(x.ingredients||'').split('\n').filter(Boolean);
+    var stepLines=(x.steps||'').split('\n').filter(Boolean);
+    return '<div class="content-card" style="padding:0;margin-bottom:12px;border:1px solid var(--line);background:var(--paper);overflow:hidden;">'
+      // 헤더 (항상 보임)
+      +'<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;" onclick="togRecOpen('+realIdx+')">'
+      +(x.photo?'<img src="'+x.photo+'" style="width:52px;height:52px;object-fit:cover;border-radius:4px;flex-shrink:0;">':'<div style="width:52px;height:52px;background:var(--bg2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🍽</div>')
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="font-size:15px;color:var(--ink);font-family:var(--serif,serif);">'+esc(x.title)+'</div>'
+      +'<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">'
+      +'<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--bg3);color:var(--ink2);border:1px solid var(--line);">'+esc(x.cat)+'</span>'
+      +(x.time?'<span style="font-size:10px;color:var(--ink3);">⏱ '+esc(x.time)+'</span>':'')
+      +(x.serving?'<span style="font-size:10px;color:var(--ink3);">👤 '+esc(x.serving)+'</span>':'')
+      +'</div>'
+      +'</div>'
+      +'<div style="display:flex;gap:4px;flex-shrink:0;">'
+      +'<button onclick="event.stopPropagation();editRec('+realIdx+')" class="ghost" style="font-size:10px;padding:3px 8px;">수정</button>'
+      +'<span class="del-btn" onclick="event.stopPropagation();delRec('+realIdx+')">×</span>'
+      +'</div></div>'
+      // 펼쳐지는 내용
+      +(x.open?'<div style="padding:0 14px 14px;border-top:1px solid var(--bg2);">'
+        +(ingLines.length?'<div style="margin-top:12px;"><div style="font-size:10px;letter-spacing:.15em;color:var(--ink3);margin-bottom:8px;">재료</div>'
+          +'<div style="display:flex;flex-wrap:wrap;gap:6px;">'+ingLines.map(function(l){return '<span style="font-size:12px;padding:3px 10px;background:var(--bg2);border-radius:12px;color:var(--ink2);">'+esc(l.trim())+'</span>';}).join('')+'</div></div>':'')
+        +(stepLines.length?'<div style="margin-top:12px;"><div style="font-size:10px;letter-spacing:.15em;color:var(--ink3);margin-bottom:8px;">조리법</div>'
+          +'<ol style="margin:0;padding-left:18px;">'+stepLines.map(function(l){return '<li style="font-size:12px;color:var(--ink2);line-height:1.8;margin-bottom:2px;">'+esc(l.replace(/^\d+\.\s*/,''))+'</li>';}).join('')+'</ol></div>':'')
+        +'</div>':'')
+      +'</div>';
+  }).join('');
+}
+function togRecOpen(i){
+  var items=G('recipes',[]); items[i].open=!items[i].open; S('recipes',items); drawRecList();
+}
+function delRec(i){
+  var items=G('recipes',[]); items.splice(i,1); S('recipes',items); drawRecList();
+}
+function editRec(i){
+  var items=G('recipes',[]), x=items[i]; if(!x) return;
+  var old=$id('recEditModal'); if(old) old.remove();
+  var editPhoto=x.photo||null;
+  var html='<div id="recEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(540px,95vw);border:1px solid var(--line);max-height:92vh;overflow-y:auto;">';
+  html+='<div style="font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;">레시피 수정</div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 100px 80px 80px;gap:8px;margin-bottom:8px;">';
+  html+='<input type="text" id="recE_title" value="'+esc(x.title||'')+'">';
+  html+='<select id="recE_cat">';
+  ['한식','양식','일식','중식','간식','음료','기타'].forEach(function(c){
+    html+='<option value="'+c+'"'+(x.cat===c?' selected':'')+'>'+c+'</option>';
+  });
+  html+='</select>';
+  html+='<input type="text" id="recE_time" value="'+esc(x.time||'')+'" placeholder="⏱ 시간">';
+  html+='<input type="text" id="recE_serving" value="'+esc(x.serving||'')+'" placeholder="👤 인분">';
+  html+='</div>';
+  html+='<textarea id="recE_ingredients" style="width:100%;min-height:80px;resize:vertical;display:block;margin-bottom:8px;">'+esc(x.ingredients||'')+'</textarea>';
+  html+='<textarea id="recE_steps" style="width:100%;min-height:100px;resize:vertical;display:block;margin-bottom:8px;">'+esc(x.steps||'')+'</textarea>';
+  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">';
+  html+=(x.photo?'<img id="recE_photoPreview" src="'+x.photo+'" style="width:60px;height:60px;object-fit:cover;border-radius:4px;">':'<div id="recE_photoPreview" style="width:60px;height:60px;background:var(--bg2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;">🍽</div>');
+  html+='<div><div class="img-drop-zone" style="margin:0;padding:7px 12px;font-size:11px;"><input type="file" accept="image/*" id="recE_fileInput">📷 사진 변경</div>';
+  if(x.photo) html+='<span onclick="clearRecEditPhoto()" style="font-size:11px;color:var(--ink3);cursor:pointer;display:block;margin-top:4px;">🗑 사진 제거</span>';
+  html+='</div></div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html+='<button class="ghost" onclick="document.getElementById(\'recEditModal\').remove()">취소</button>';
+  html+='<button id="recESaveBtn">저장</button>';
+  html+='</div></div></div>';
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+  // 사진 변경 핸들러
+  var fi=$id('recE_fileInput');
+  if(fi) fi.onchange=function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      editPhoto=ev.target.result;
+      var prev=$id('recE_photoPreview');
+      if(prev){ prev.src=editPhoto; prev.style.display='block'; }
+    };
+    reader.readAsDataURL(file);
+  };
+  window.clearRecEditPhoto=function(){ editPhoto=null; var p=$id('recE_photoPreview'); if(p){ p.src=''; p.style.display='none'; } };
+  $id('recESaveBtn').onclick=function(){
+    var title=$id('recE_title').value.trim(); if(!title){alert('요리 이름을 입력해주세요');return;}
+    items[i]=Object.assign({},x,{
+      title:title,
+      cat:$id('recE_cat').value,
+      time:$id('recE_time').value.trim(),
+      serving:$id('recE_serving').value.trim(),
+      ingredients:$id('recE_ingredients').value.trim(),
+      steps:$id('recE_steps').value.trim(),
+      photo:editPhoto
+    });
+    S('recipes',items); $id('recEditModal').remove(); drawRecList();
+  };
+  setTimeout(function(){ var el=$id('recE_title'); if(el){el.focus();el.select();} },60);
 }
 
 // ══════ MOOD CHART ══════
