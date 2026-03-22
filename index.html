@@ -5250,21 +5250,25 @@ function setPlaceCat(c){
 // 카카오 장소 검색
 var kakaoPlacesLoaded = false;
 var kakaoPlacesReady = false;
+var kakaoReadyCbs = [];
+
 function loadKakaoScript(cb){
-  if(kakaoPlacesReady){ cb(); return; }
-  if(kakaoPlacesLoaded){
-    // 이미 로딩 중 — 준비될 때까지 대기
-    var wait=setInterval(function(){ if(kakaoPlacesReady){ clearInterval(wait); cb(); } },100);
-    return;
+  if(kakaoPlacesReady && window.kakao && window.kakao.maps && window.kakao.maps.services){
+    cb(); return;
   }
+  kakaoReadyCbs.push(cb);
+  if(kakaoPlacesLoaded) return; // 이미 로딩 중 — 콜백만 쌓아두고 대기
   kakaoPlacesLoaded = true;
   var s = document.createElement('script');
-  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey='+KAKAO_JS_KEY+'&libraries=services';
+  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey='+KAKAO_JS_KEY+'&libraries=services&autoload=false';
   s.onload = function(){
-    kakaoPlacesReady = true;
-    cb();
+    window.kakao.maps.load(function(){
+      kakaoPlacesReady = true;
+      kakaoReadyCbs.forEach(function(fn){ fn(); });
+      kakaoReadyCbs = [];
+    });
   };
-  s.onerror = function(){ console.error('카카오 지도 스크립트 로드 실패'); };
+  s.onerror = function(){ console.error('카카오 스크립트 로드 실패'); };
   document.head.appendChild(s);
 }
 
