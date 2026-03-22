@@ -5133,6 +5133,7 @@ function editRec(i){
 
 // ══════ GOEC PLACES ══════
 var KAKAO_JS_KEY = '54b701cc332c8202c08b2cdbc62692c9';
+var KAKAO_REST_KEY = 'fbd0f8a06c2b8b70cfd46c0b58d71b2a';
 var PLACE_CATS = ['전체','☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'];
 var placeSelCat = null;
 var placePhotoData = null;
@@ -5248,26 +5249,6 @@ function setPlaceCat(c){
   placeSelCat=c; drawGoecPlaces();
 }
 // 카카오 장소 검색
-var kakaoPlacesLoaded = false;
-var kakaoPlacesReady = false;
-var kakaoReadyCbs = [];
-
-function loadKakaoScript(cb){
-  if(kakaoPlacesReady){ cb(); return; }
-  kakaoReadyCbs.push(cb);
-  if(kakaoPlacesLoaded) return;
-  kakaoPlacesLoaded = true;
-  var s = document.createElement('script');
-  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey='+KAKAO_JS_KEY+'&libraries=services';
-  s.onload = function(){
-    kakaoPlacesReady = true;
-    kakaoReadyCbs.forEach(function(fn){ fn(); });
-    kakaoReadyCbs = [];
-  };
-  s.onerror = function(){ console.error('카카오 스크립트 로드 실패'); };
-  document.head.appendChild(s);
-}
-
 var placeSearchTimer = null;
 function searchKakaoPlace(query){
   var dd = $id('placeSearchDropdown');
@@ -5275,24 +5256,24 @@ function searchKakaoPlace(query){
   if(!query || query.length < 2){ dd.style.display='none'; return; }
   clearTimeout(placeSearchTimer);
   placeSearchTimer = setTimeout(function(){
-    loadKakaoScript(function(){
-      var ps = new kakao.maps.services.Places();
-      ps.keywordSearch(query, function(data, status){
-        if(status !== kakao.maps.services.Status.OK || !data.length){
-          dd.style.display='none'; return;
-        }
-        window._kakaoPlaceResults = data.slice(0,6);
-        dd.style.display='block';
-        dd.innerHTML = window._kakaoPlaceResults.map(function(p,idx){
-          return '<div onclick="selectKakaoPlace('+idx+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bg2);" onmouseenter="this.style.background=\'var(--bg2)\'" onmouseleave="this.style.background=\'\'">'
-            +'<div style="font-size:13px;color:var(--ink);">'+esc(p.place_name)+'</div>'
-            +'<div style="font-size:11px;color:var(--ink3);margin-top:2px;">'+esc(p.address_name)+'</div>'
-            +(p.category_group_name?'<div style="font-size:10px;color:var(--accent2);margin-top:1px;">'+esc(p.category_group_name)+'</div>':'')
-            +'</div>';
-        }).join('');
-      });
-    });
-  }, 300);
+    fetch('https://dapi.kakao.com/v2/local/search/keyword.json?query='+encodeURIComponent(query)+'&size=6', {
+      headers: { 'Authorization': 'KakaoAK '+KAKAO_REST_KEY }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data.documents || !data.documents.length){ dd.style.display='none'; return; }
+      window._kakaoPlaceResults = data.documents;
+      dd.style.display='block';
+      dd.innerHTML = data.documents.map(function(p,idx){
+        return '<div onclick="selectKakaoPlace('+idx+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bg2);" onmouseenter="this.style.background=\'var(--bg2)\'" onmouseleave="this.style.background=\'\'">'
+          +'<div style="font-size:13px;color:var(--ink);">'+esc(p.place_name)+'</div>'
+          +'<div style="font-size:11px;color:var(--ink3);margin-top:2px;">'+esc(p.address_name)+'</div>'
+          +(p.category_group_name?'<div style="font-size:10px;color:var(--accent2);margin-top:1px;">'+esc(p.category_group_name)+'</div>':'')
+          +'</div>';
+      }).join('');
+    })
+    .catch(function(){ dd.style.display='none'; });
+  }, 350);
 }
 
 function selectKakaoPlace(idx){
