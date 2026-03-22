@@ -1548,7 +1548,7 @@ var STATUS_LABEL = {doing:'진행중', done:'완료', hold:'보류'};
 function pad(n){ return String(n).padStart(2,'0'); }
 function dkey(y,m,d){ return y+'-'+pad(m)+'-'+pad(d); }
 function todayKey(){ var d=new Date(); return dkey(d.getFullYear(),d.getMonth()+1,d.getDate()); }
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s){ var t=String(s||'').replace(/&/g,'&amp;'); t=t.split('<').join('&lt;'); t=t.split('>').join('&gt;'); t=t.split('"').join('&quot;'); return t; }
 function $id(id){ return document.getElementById(id); }
 function parseMin(s){
   s=(s||'').trim();
