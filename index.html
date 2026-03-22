@@ -507,6 +507,7 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
         <div class="nav-item" id="nav-library">◦ 독서 · 콘텐츠</div>
         <div class="nav-item" id="nav-nomad">◦ 한달살기</div>
         <div class="nav-item" id="nav-tips">◦ 생활팁 · 레시피</div>
+        <div class="nav-item" id="nav-places">◦ 가볼 플레이스 📍</div>
         <!-- 콘텐츠 기획은 프로젝트 > 고은청 탭으로 이동 -->
         <div class="nav-item" id="nav-moodboard">◦ Interior Moodboard</div>
         <div class="nav-item" id="nav-outfit">◦ Outfit Archive</div>
@@ -1157,6 +1158,13 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
         </div>
       </div>
 
+      <!-- PLACES -->
+      <div class="page" id="page-places">
+        <div style="max-width:860px;">
+          <div id="placesPageBody"></div>
+        </div>
+      </div>
+
       <!-- WEEKLY RETRO -->
       <div class="page" id="page-weekly-retro">
         <div style="max-width:680px;">
@@ -1564,7 +1572,7 @@ function go(page){
   $id('page-'+page).classList.add('active');
   var navEl = $id('nav-'+page);
   if(navEl) navEl.classList.add('active');
-  var labels={home:'대시보드',daily:'데일리',weekly:'위클리',monthly:'먼슬리',goals:'목표',projects:'블로그 · 트위터','wedding-proj':'웨딩 마르체쥬','goec-proj':'고은청','shop-proj':'쇼핑몰 마르체쥬',inbox:'정보 덤핑',past:'과거 기록',habit:'습관 트래커',revenue:'수익 트래커',energy:'에너지 일기','library':'독서 · 콘텐츠','weekly-retro':'위클리 회고','mood-chart':'기분 패턴',household:'가계부',wealth:'자산 관리',nomad:'한달살기','tips':'생활팁 · 레시피',moodboard:'Interior Moodboard',outfit:'Outfit Archive',content:'콘텐츠 기획'};
+  var labels={home:'대시보드',daily:'데일리',weekly:'위클리',monthly:'먼슬리',goals:'목표',projects:'블로그 · 트위터','wedding-proj':'웨딩 마르체쥬','goec-proj':'고은청','shop-proj':'쇼핑몰 마르체쥬',inbox:'정보 덤핑',past:'과거 기록',habit:'습관 트래커',revenue:'수익 트래커',energy:'에너지 일기','library':'독서 · 콘텐츠','weekly-retro':'위클리 회고','mood-chart':'기분 패턴',household:'가계부',wealth:'자산 관리',nomad:'한달살기','tips':'생활팁 · 레시피','places':'가볼 플레이스',moodboard:'Interior Moodboard',outfit:'Outfit Archive',content:'콘텐츠 기획'};
   $id('pageTitle').textContent = labels[page]||page;
   closeSidebar();
   if(page==='daily') setTimeout(drawTL,60);
@@ -1588,6 +1596,7 @@ function go(page){
   if(page==='energy') drawEnergy();
   if(page==='library'){ drawLibrary(); }
   if(page==='tips'){ drawTips(); }
+  if(page==='places'){ drawPlacesPage(); }
   if(page==='weekly-retro') drawRetro();
   if(page==='mood-chart') drawMoodChart();
 }
@@ -2034,7 +2043,6 @@ function drawSingleProj(key, bodyId){
       +'<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);">'
       +'<div class="proj-tab active" id="goecSubTab-content" onclick="switchGoecSub(\'content\')">콘텐츠 기획</div>'
       +'<div class="proj-tab" id="goecSubTab-schedule" onclick="switchGoecSub(\'schedule\')">업로드 스케줄 📅</div>'
-      +'<div class="proj-tab" id="goecSubTab-places" onclick="switchGoecSub(\'places\')">가볼 플레이스 📍</div>'
       +'</div>'
       +'<div id="goecSubContent">'
       +'<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);">'
@@ -2046,9 +2054,6 @@ function drawSingleProj(key, bodyId){
       +'</div>'
       +'<div id="goecSubSchedule" style="display:none;">'
       +'<div id="uploadSchedulerBody"></div>'
-      +'</div>'
-      +'<div id="goecSubPlaces" style="display:none;">'
-      +'<div id="goecPlacesBody"></div>'
       +'</div>'
       +'</div>';
   }
@@ -2080,13 +2085,12 @@ function drawSingleProj(key, bodyId){
   }
 }
 function switchGoecSub(tab){
-  var t1=$id('goecSubTab-content'), t2=$id('goecSubTab-schedule'), t3=$id('goecSubTab-places');
-  var b1=$id('goecSubContent'), b2=$id('goecSubSchedule'), b3=$id('goecSubPlaces');
-  [t1,t2,t3].forEach(function(t){ if(t) t.classList.remove('active'); });
-  [b1,b2,b3].forEach(function(b){ if(b) b.style.display='none'; });
+  var t1=$id('goecSubTab-content'), t2=$id('goecSubTab-schedule');
+  var b1=$id('goecSubContent'), b2=$id('goecSubSchedule');
+  [t1,t2].forEach(function(t){ if(t) t.classList.remove('active'); });
+  [b1,b2].forEach(function(b){ if(b) b.style.display='none'; });
   if(tab==='content'){  if(t1) t1.classList.add('active'); if(b1) b1.style.display='block'; switchPCT2('plan'); }
   if(tab==='schedule'){ if(t2) t2.classList.add('active'); if(b2) b2.style.display='block'; drawUploadScheduler(); }
-  if(tab==='places'){   if(t3) t3.classList.add('active'); if(b3) b3.style.display='block'; drawGoecPlaces(); }
 }
 function addSingleTask(key,bodyId){
   var el=$id('singleTaskInput_'+key); if(!el) return;
@@ -3310,6 +3314,7 @@ function bindEvents(){
   $id('nav-library').onclick      = function(){ go('library'); };
   $id('nav-nomad').onclick        = function(){ go('nomad'); };
   $id('nav-tips').onclick         = function(){ go('tips'); };
+  $id('nav-places').onclick       = function(){ go('places'); };
   if($id('nav-content')) $id('nav-content').onclick = function(){ go('content'); };
   $id('nav-moodboard').onclick    = function(){ go('moodboard'); };
   $id('nav-weekly-retro').onclick = function(){ go('weekly-retro'); };
@@ -5133,6 +5138,12 @@ var placeSelCat = null;
 var placePhotoData = null;
 var naverMapLoaded = false;
 
+function drawPlacesPage(){
+  var body=$id('placesPageBody'); if(!body) return;
+  body.innerHTML='<div id="goecPlacesBody"></div>';
+  drawGoecPlaces();
+}
+
 function drawGoecPlaces(){
   var body=$id('goecPlacesBody'); if(!body) return;
   var items=G('goecPlaces',[]);
@@ -5210,7 +5221,8 @@ function drawGoecPlaces(){
 
   body.innerHTML=formHtml
     +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">'+filterHtml+'</div>'
-    +'<div style="display:flex;justify-content:flex-end;margin-bottom:16px;">'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px;">'
+    +'<button onclick="suggestDayCourse()" class="ghost" style="font-size:11px;padding:6px 14px;background:#fdf6ee;border-color:var(--accent);color:var(--accent);">✨ 하루 코스 추천</button>'
     +'<button onclick="openNaverMapAll()" class="ghost" style="font-size:11px;padding:6px 14px;background:#e8f5e9;border-color:#7a9e7e;color:#3d6e42;">🗺 전체 지도 보기</button>'
     +'</div>'
     +listHtml;
@@ -5421,6 +5433,145 @@ function editPlace(i){
     S('goecPlaces',items); $id('placeEditModal').remove(); drawGoecPlaces();
   };
   setTimeout(function(){ var el=$id('placeE_title'); if(el){el.focus();el.select();} },60);
+}
+
+// 하루 코스 추천
+function suggestDayCourse(){
+  var items=G('goecPlaces',[]).filter(function(x){return !x.visited && x.addr;});
+  if(items.length===0){ showToast('아직 안 간 장소가 없어요 📍'); return; }
+  if(items.length<2){ showToast('장소가 2개 이상 있어야 코스를 만들 수 있어요!'); return; }
+
+  var old=$id('dayCourseModal'); if(old) old.remove();
+
+  // geocoding으로 좌표 가져와서 클러스터링
+  var html='<div id="dayCourseModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(500px,94vw);border:1px solid var(--line);max-height:88vh;overflow-y:auto;">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">';
+  html+='<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;">✨ 하루 코스 추천</div>';
+  html+='<span onclick="document.getElementById(\'dayCourseModal\').remove()" style="cursor:pointer;font-size:20px;color:var(--ink3);">×</span>';
+  html+='</div>';
+  html+='<div id="dayCourseContent" style="font-size:13px;color:var(--ink3);">가까운 장소끼리 묶는 중... 잠깐만요 🗺</div>';
+  html+='</div></div>';
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+
+  // 좌표 변환 후 클러스터링
+  loadNaverMapScript(function(){
+    geocodePlacesAndCluster(items);
+  });
+}
+
+function geocodePlacesAndCluster(items){
+  var results=[];
+  var done=0;
+
+  items.forEach(function(x){
+    // 이미 좌표가 저장돼 있으면 재사용
+    if(x.lat && x.lng){
+      results.push({item:x, lat:parseFloat(x.lat), lng:parseFloat(x.lng)});
+      done++;
+      if(done===items.length) renderDayCourses(results);
+      return;
+    }
+    if(!window.naver){ done++; if(done===items.length) renderDayCourses(results); return; }
+    naver.maps.Service.geocode({query:x.addr}, function(status,res){
+      if(status===naver.maps.Service.Status.OK && res.v2.addresses.length>0){
+        var a=res.v2.addresses[0];
+        var lat=parseFloat(a.y), lng=parseFloat(a.x);
+        // 좌표 저장 (다음 번엔 geocoding 안 해도 됨)
+        var allItems=G('goecPlaces',[]);
+        var idx=allItems.findIndex(function(p){return p.id===x.id;});
+        if(idx>-1){ allItems[idx].lat=lat; allItems[idx].lng=lng; S('goecPlaces',allItems); }
+        results.push({item:x, lat:lat, lng:lng});
+      }
+      done++;
+      if(done===items.length) renderDayCourses(results);
+    });
+  });
+}
+
+function renderDayCourses(points){
+  var el=$id('dayCourseContent'); if(!el) return;
+  if(points.length===0){
+    el.innerHTML='<div style="color:var(--ink3);">좌표를 가져오지 못했어요. 주소를 더 정확히 입력해봐요.</div>';
+    return;
+  }
+
+  // 간단한 거리 기반 클러스터링 (greedy)
+  var used=points.map(function(){ return false; });
+  var courses=[];
+  var MAX_DIST_KM=3; // 3km 이내면 같은 코스
+  var MAX_PER_COURSE=4;
+
+  for(var i=0;i<points.length;i++){
+    if(used[i]) continue;
+    var course=[points[i]];
+    used[i]=true;
+    for(var j=0;j<points.length&&course.length<MAX_PER_COURSE;j++){
+      if(used[j]) continue;
+      var dist=calcDist(course[0].lat,course[0].lng,points[j].lat,points[j].lng);
+      if(dist<=MAX_DIST_KM){ course.push(points[j]); used[j]=true; }
+    }
+    courses.push(course);
+  }
+
+  // 코스가 없거나 1개짜리만 있으면 거리 늘려서 재시도
+  var multiCourses=courses.filter(function(c){return c.length>=2;});
+  if(multiCourses.length===0){
+    // 거리 무시하고 가까운 순으로 2~3개씩 묶기
+    var sorted=points.slice().sort(function(a,b){ return a.lng-b.lng; });
+    multiCourses=[];
+    for(var k=0;k<sorted.length;k+=3){
+      multiCourses.push(sorted.slice(k,k+3));
+    }
+  }
+
+  if(multiCourses.length===0){
+    el.innerHTML='<div style="color:var(--ink3);">서로 너무 멀리 있어서 코스를 만들기 어려워요. 장소를 더 추가해봐요!</div>';
+    return;
+  }
+
+  var html='<div style="font-size:11px;color:var(--ink3);margin-bottom:16px;">등록된 장소들을 거리 기준으로 묶었어요 😊</div>';
+
+  multiCourses.forEach(function(course, ci){
+    var totalDist=0;
+    for(var i=1;i<course.length;i++){
+      totalDist+=calcDist(course[i-1].lat,course[i-1].lng,course[i].lat,course[i].lng);
+    }
+    var naverQuery=course.map(function(p){return encodeURIComponent(p.item.addr);}).join(',');
+    var naverUrl='https://map.naver.com/v5/directions/-/-/-/car?c='+course[0].lng+','+course[0].lat+',15,0,0,0,dh';
+
+    html+='<div style="padding:16px;margin-bottom:12px;border:1px solid var(--line);background:var(--paper);">';
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
+    html+='<div style="font-size:13px;color:var(--ink2);font-family:var(--serif,serif);">코스 '+(ci+1)+'</div>';
+    html+='<span style="font-size:10px;color:var(--ink3);">총 이동 약 '+totalDist.toFixed(1)+'km</span>';
+    html+='</div>';
+    html+=course.map(function(p,pi){
+      var catIcon=p.item.cat?p.item.cat.split(' ')[0]:'📍';
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
+        +(pi>0?'<div style="width:1px;height:16px;background:var(--line);margin-left:10px;margin-bottom:4px;"></div>':'')
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:10px;'+(pi>0?'margin-top:-8px;':'')+'margin-bottom:6px;">'
+        +'<span style="font-size:18px;flex-shrink:0;">'+catIcon+'</span>'
+        +'<div><div style="font-size:13px;color:var(--ink);">'+esc(p.item.title)+'</div>'
+        +(p.item.addr?'<div style="font-size:11px;color:var(--ink3);">'+esc(p.item.addr)+'</div>':'')
+        +'</div></div>';
+    }).join('');
+    html+='<div style="display:flex;gap:8px;margin-top:12px;">';
+    html+='<a href="'+naverUrl+'" target="_blank" style="flex:1;text-align:center;padding:7px;background:#e8f5e9;border:1px solid #7a9e7e;color:#3d6e42;font-size:11px;text-decoration:none;border-radius:2px;">🗺 네이버 지도로 보기</a>';
+    html+='</div>';
+    html+='</div>';
+  });
+
+  el.innerHTML=html;
+}
+
+function calcDist(lat1,lng1,lat2,lng2){
+  var R=6371;
+  var dLat=(lat2-lat1)*Math.PI/180;
+  var dLng=(lng2-lng1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
 // ══════ HOUSEHOLD TAB ══════
