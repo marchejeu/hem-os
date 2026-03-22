@@ -1487,7 +1487,7 @@ function saveSBConfig(){
   closeSBModal();
   alert('연결 완료! 지금 데이터를 Supabase에 올릴게요.');
   // 기존 localStorage 데이터 전부 Supabase에 밀어넣기
-  var keys=['todos','blocks','fixedBlocks','routines','goals','gratitude','inbox','past','calEvts','dailyMemo','mealLog','weddingSchedule','weddingSettlement','revData','revGoals','habits','energyLogs','library','libCats','household','assets','debts','fixedExp','nomadBucket','nomadPlan','nomadLog','moodboard','outfit','contentPlans','contentIdeas','projData','dashGreet','goalBucket','toRead','tips','recipes'];
+  var keys=['todos','blocks','fixedBlocks','routines','goals','gratitude','inbox','past','calEvts','dailyMemo','mealLog','weddingSchedule','weddingSettlement','revData','revGoals','habits','energyLogs','library','libCats','household','assets','debts','fixedExp','nomadBucket','nomadPlan','nomadLog','moodboard','outfit','contentPlans','contentIdeas','projData','dashGreet','goalBucket','toRead','tips','recipes','goecPlaces'];
   keys.forEach(function(k){ var v=_G_orig(k,null); if(v!==null) sbSet(k,v); });
 }
 
@@ -2034,6 +2034,7 @@ function drawSingleProj(key, bodyId){
       +'<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);">'
       +'<div class="proj-tab active" id="goecSubTab-content" onclick="switchGoecSub(\'content\')">콘텐츠 기획</div>'
       +'<div class="proj-tab" id="goecSubTab-schedule" onclick="switchGoecSub(\'schedule\')">업로드 스케줄 📅</div>'
+      +'<div class="proj-tab" id="goecSubTab-places" onclick="switchGoecSub(\'places\')">가볼 플레이스 📍</div>'
       +'</div>'
       +'<div id="goecSubContent">'
       +'<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);">'
@@ -2045,6 +2046,9 @@ function drawSingleProj(key, bodyId){
       +'</div>'
       +'<div id="goecSubSchedule" style="display:none;">'
       +'<div id="uploadSchedulerBody"></div>'
+      +'</div>'
+      +'<div id="goecSubPlaces" style="display:none;">'
+      +'<div id="goecPlacesBody"></div>'
       +'</div>'
       +'</div>';
   }
@@ -2076,15 +2080,13 @@ function drawSingleProj(key, bodyId){
   }
 }
 function switchGoecSub(tab){
-  var isContent=tab==='content';
-  var t1=$id('goecSubTab-content'), t2=$id('goecSubTab-schedule');
-  var b1=$id('goecSubContent'), b2=$id('goecSubSchedule');
-  if(t1) t1.classList.toggle('active',isContent);
-  if(t2) t2.classList.toggle('active',!isContent);
-  if(b1) b1.style.display=isContent?'block':'none';
-  if(b2) b2.style.display=isContent?'none':'block';
-  if(!isContent) drawUploadScheduler();
-  else switchPCT2('plan');
+  var t1=$id('goecSubTab-content'), t2=$id('goecSubTab-schedule'), t3=$id('goecSubTab-places');
+  var b1=$id('goecSubContent'), b2=$id('goecSubSchedule'), b3=$id('goecSubPlaces');
+  [t1,t2,t3].forEach(function(t){ if(t) t.classList.remove('active'); });
+  [b1,b2,b3].forEach(function(b){ if(b) b.style.display='none'; });
+  if(tab==='content'){  if(t1) t1.classList.add('active'); if(b1) b1.style.display='block'; switchPCT2('plan'); }
+  if(tab==='schedule'){ if(t2) t2.classList.add('active'); if(b2) b2.style.display='block'; drawUploadScheduler(); }
+  if(tab==='places'){   if(t3) t3.classList.add('active'); if(b3) b3.style.display='block'; drawGoecPlaces(); }
 }
 function addSingleTask(key,bodyId){
   var el=$id('singleTaskInput_'+key); if(!el) return;
@@ -5122,6 +5124,185 @@ function editRec(i){
     S('recipes',items); $id('recEditModal').remove(); drawRecList();
   };
   setTimeout(function(){ var el=$id('recE_title'); if(el){el.focus();el.select();} },60);
+}
+
+// ══════ GOEC PLACES ══════
+var PLACE_CATS = ['전체','☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'];
+var placeSelCat = null;
+var placePhotoData = null;
+
+function drawGoecPlaces(){
+  var body=$id('goecPlacesBody'); if(!body) return;
+  var items=G('goecPlaces',[]);
+  var filtered=placeSelCat?items.filter(function(x){return x.cat===placeSelCat;}):items;
+  var visited=filtered.filter(function(x){return x.visited;});
+  var unvisited=filtered.filter(function(x){return !x.visited;});
+
+  // 필터바
+  var filterHtml=PLACE_CATS.map(function(c){
+    var key=c==='전체'?null:c;
+    var active=placeSelCat===key;
+    return '<span onclick="setPlaceCat('+(key?'\''+key+'\'':'null')+')" style="cursor:pointer;font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--line);background:'+(active?'var(--accent2)':'var(--paper)')+';color:'+(active?'#fff':'var(--ink2)')+';">'+c+'</span>';
+  }).join('');
+
+  // 입력 폼
+  var formHtml='<div class="compose-box" style="margin-bottom:20px;">'
+    +'<div class="card-title" style="margin-bottom:12px;">새 플레이스 추가</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">'
+    +'<input type="text" id="placeTitle" class="flex1" placeholder="장소 이름...">'
+    +'<select id="placeCat" style="width:130px;">'
+    +['☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'].map(function(c){
+        return '<option value="'+c+'">'+c+'</option>';
+      }).join('')
+    +'</select>'
+    +'</div>'
+    +'<input type="text" id="placeAddr" placeholder="주소 또는 위치 힌트..." style="width:100%;margin-bottom:8px;">'
+    +'<textarea id="placeMemo" placeholder="메모 (분위기, 추천 메뉴, 이유...)" style="width:100%;min-height:60px;resize:vertical;display:block;margin-bottom:8px;"></textarea>'
+    +'<div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;">'
+    +'<div style="display:flex;align-items:center;gap:8px;">'
+    +'<div class="img-drop-zone" id="placeDZ" style="margin:0;padding:7px 12px;font-size:11px;">'
+    +'<input type="file" accept="image/*" id="placeFileInput">📷 사진 추가'
+    +'</div>'
+    +'<span id="placePhotoLabel" style="font-size:11px;color:var(--accent2);"></span>'
+    +'</div>'
+    +'<button id="placeAddBtn">저장</button>'
+    +'</div></div>';
+
+  // 카드 렌더
+  function renderCard(x){
+    var realIdx=items.indexOf(x);
+    return '<div style="padding:0;margin-bottom:10px;border:1px solid var(--line);background:var(--paper);overflow:hidden;'+(x.visited?'opacity:.6;':'')+'">'
+      +'<div style="display:flex;gap:12px;padding:12px 14px;align-items:flex-start;">'
+      +(x.photo?'<img src="'+x.photo+'" style="width:64px;height:64px;object-fit:cover;border-radius:4px;flex-shrink:0;">':'<div style="width:64px;height:64px;background:var(--bg2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">'+(x.cat?x.cat.split(' ')[0]:'📍')+'</div>')
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">'
+      +'<span style="font-size:15px;color:var(--ink);font-family:var(--serif,serif);">'+(x.visited?'<s>':'')+esc(x.title)+(x.visited?'</s>':'')+'</span>'
+      +'<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:var(--bg3);color:var(--ink2);border:1px solid var(--line);">'+esc(x.cat)+'</span>'
+      +(x.visited?'<span style="font-size:10px;color:#6a9e6a;">✅ 다녀옴</span>':'')
+      +'</div>'
+      +(x.addr?'<div style="font-size:11px;color:var(--ink3);margin-bottom:3px;">📍 '+esc(x.addr)+'</div>':'')
+      +(x.memo?'<div style="font-size:12px;color:var(--ink2);line-height:1.6;">'+esc(x.memo)+'</div>':'')
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">'
+      +'<button onclick="togPlaceVisited('+realIdx+')" class="ghost" style="font-size:10px;padding:3px 8px;">'+(x.visited?'취소':'다녀옴✓')+'</button>'
+      +'<button onclick="editPlace('+realIdx+')" class="ghost" style="font-size:10px;padding:3px 8px;">수정</button>'
+      +'<span class="del-btn" onclick="delPlace('+realIdx+')">×</span>'
+      +'</div>'
+      +'</div></div>';
+  }
+
+  var listHtml='';
+  if(unvisited.length===0 && visited.length===0){
+    listHtml='<div style="font-size:13px;color:var(--ink3);padding:16px 0;">가고 싶은 곳을 추가해봐요 📍</div>';
+  } else {
+    if(unvisited.length){
+      listHtml+='<div style="font-size:10px;letter-spacing:.2em;color:var(--ink3);margin-bottom:10px;">WANT TO GO ('+unvisited.length+')</div>';
+      listHtml+=unvisited.map(renderCard).join('');
+    }
+    if(visited.length){
+      listHtml+='<div style="font-size:10px;letter-spacing:.2em;color:var(--ink3);margin:'+(unvisited.length?'20px':'0')+'px 0 10px;">VISITED ('+visited.length+')</div>';
+      listHtml+=visited.map(renderCard).join('');
+    }
+  }
+
+  body.innerHTML=formHtml
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">'+filterHtml+'</div>'
+    +listHtml;
+
+  // 이벤트 바인딩
+  var fi=$id('placeFileInput');
+  if(fi) fi.onchange=function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      placePhotoData=ev.target.result;
+      var lbl=$id('placePhotoLabel'); if(lbl) lbl.textContent='📷 사진 첨부됨';
+    };
+    reader.readAsDataURL(file);
+  };
+  var addBtn=$id('placeAddBtn');
+  if(addBtn) addBtn.onclick=addPlace;
+}
+
+function setPlaceCat(c){
+  placeSelCat=c; drawGoecPlaces();
+}
+function addPlace(){
+  var title=($id('placeTitle')||{value:''}).value.trim(); if(!title) return;
+  var items=G('goecPlaces',[]);
+  items.unshift({
+    id:Date.now(),
+    title:title,
+    cat:($id('placeCat')||{value:'기타'}).value,
+    addr:($id('placeAddr')||{value:''}).value.trim(),
+    memo:($id('placeMemo')||{value:''}).value.trim(),
+    photo:placePhotoData||null,
+    visited:false
+  });
+  S('goecPlaces',items);
+  ['placeTitle','placeAddr','placeMemo'].forEach(function(id){ if($id(id)) $id(id).value=''; });
+  placePhotoData=null;
+  var lbl=$id('placePhotoLabel'); if(lbl) lbl.textContent='';
+  var fi=$id('placeFileInput'); if(fi) fi.value='';
+  drawGoecPlaces();
+}
+function togPlaceVisited(i){
+  var items=G('goecPlaces',[]); items[i].visited=!items[i].visited; S('goecPlaces',items); drawGoecPlaces();
+}
+function delPlace(i){
+  var items=G('goecPlaces',[]); items.splice(i,1); S('goecPlaces',items); drawGoecPlaces();
+}
+function editPlace(i){
+  var items=G('goecPlaces',[]), x=items[i]; if(!x) return;
+  var old=$id('placeEditModal'); if(old) old.remove();
+  var editPhoto=x.photo||null;
+  var html='<div id="placeEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(480px,94vw);border:1px solid var(--line);max-height:92vh;overflow-y:auto;">';
+  html+='<div style="font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;">플레이스 수정</div>';
+  html+='<div style="display:flex;gap:8px;margin-bottom:8px;">';
+  html+='<input type="text" id="placeE_title" value="'+esc(x.title||'')+'" class="flex1">';
+  html+='<select id="placeE_cat" style="width:130px;">';
+  ['☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'].forEach(function(c){
+    html+='<option value="'+c+'"'+(x.cat===c?' selected':'')+'>'+c+'</option>';
+  });
+  html+='</select></div>';
+  html+='<input type="text" id="placeE_addr" value="'+esc(x.addr||'')+'" placeholder="주소..." style="width:100%;margin-bottom:8px;">';
+  html+='<textarea id="placeE_memo" style="width:100%;min-height:80px;resize:vertical;display:block;margin-bottom:8px;">'+esc(x.memo||'')+'</textarea>';
+  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">';
+  html+=(x.photo?'<img id="placeE_photoPreview" src="'+x.photo+'" style="width:60px;height:60px;object-fit:cover;border-radius:4px;">':'<div id="placeE_photoPreview" style="width:60px;height:60px;background:var(--bg2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;">📍</div>');
+  html+='<div><div class="img-drop-zone" style="margin:0;padding:7px 12px;font-size:11px;"><input type="file" accept="image/*" id="placeE_fileInput">📷 사진 변경</div>';
+  if(x.photo) html+='<span onclick="clearPlaceEditPhoto()" style="font-size:11px;color:var(--ink3);cursor:pointer;display:block;margin-top:4px;">🗑 사진 제거</span>';
+  html+='</div></div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html+='<button class="ghost" onclick="document.getElementById(\'placeEditModal\').remove()">취소</button>';
+  html+='<button id="placeESaveBtn">저장</button>';
+  html+='</div></div></div>';
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+  var fi=$id('placeE_fileInput');
+  if(fi) fi.onchange=function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      editPhoto=ev.target.result;
+      var p=$id('placeE_photoPreview');
+      if(p){ p.src=editPhoto; p.tagName==='IMG'?p.style.display='block':null; }
+    };
+    reader.readAsDataURL(file);
+  };
+  window.clearPlaceEditPhoto=function(){ editPhoto=null; var p=$id('placeE_photoPreview'); if(p){ p.src=''; } };
+  $id('placeESaveBtn').onclick=function(){
+    var title=$id('placeE_title').value.trim(); if(!title){alert('장소 이름을 입력해주세요');return;}
+    items[i]=Object.assign({},x,{
+      title:title,
+      cat:$id('placeE_cat').value,
+      addr:$id('placeE_addr').value.trim(),
+      memo:$id('placeE_memo').value.trim(),
+      photo:editPhoto
+    });
+    S('goecPlaces',items); $id('placeEditModal').remove(); drawGoecPlaces();
+  };
+  setTimeout(function(){ var el=$id('placeE_title'); if(el){el.focus();el.select();} },60);
 }
 
 // ══════ HOUSEHOLD TAB ══════
