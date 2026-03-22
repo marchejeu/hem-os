@@ -491,8 +491,13 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
       </div>
       <div class="nav-section">
         <div class="nav-label">프로젝트</div>
-        <div class="nav-item" id="nav-projects">◦ 프로젝트</div>
-        <div class="nav-item" id="nav-revenue">◦ 수익 트래커</div>
+        <div class="nav-item" id="nav-wedding-proj">◦ 웨딩 마르체쥬</div>
+        <div class="nav-item" id="nav-goec-proj">◦ 고은청</div>
+        <div class="nav-item" id="nav-shop-proj">◦ 쇼핑몰 마르체쥬</div>
+        <div class="nav-item" id="nav-projects">◦ 블로그 · 트위터</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">돈</div>
         <div class="nav-item" id="nav-household">◦ 가계부</div>
         <div class="nav-item" id="nav-wealth">◦ 자산 관리</div>
       </div>
@@ -721,16 +726,37 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
               <button id="shortAddBtn">+</button>
             </div>
           </div>
+          <div class="goal-card" style="grid-column:1/-1;">
+            <span class="goal-tag" style="background:var(--bg3);color:var(--ink2);border:1px solid var(--line);">🪣 버킷리스트</span>
+            <div style="font-size:11px;color:var(--ink3);margin:6px 0 14px;line-height:1.6;">죽기 전에 꼭 하고 싶은 것들 — 이루면 체크해요</div>
+            <div id="goalBucketList"></div>
+            <div class="input-row" style="margin-top:12px;">
+              <input type="text" class="flex1" id="goalBucketInput" placeholder="버킷리스트 항목...">
+              <button id="goalBucketAddBtn">+</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- PROJECTS -->
+      <!-- WEDDING PROJ PAGE -->
+      <div class="page" id="page-wedding-proj">
+        <div id="weddingProjBody"></div>
+      </div>
+
+      <!-- GOEC PROJ PAGE -->
+      <div class="page" id="page-goec-proj">
+        <div id="goecProjBody"></div>
+      </div>
+
+      <!-- SHOP PROJ PAGE -->
+      <div class="page" id="page-shop-proj">
+        <div id="shopProjBody"></div>
+      </div>
+
+      <!-- PROJECTS (블로그·트위터) -->
       <div class="page" id="page-projects">
         <div class="proj-selector">
-          <div class="proj-tab active" data-proj="wedding">웨딩 마르체쥬</div>
-          <div class="proj-tab" data-proj="shop">쇼핑몰 마르체쥬</div>
-          <div class="proj-tab" data-proj="goec">고은청</div>
-          <div class="proj-tab" data-proj="social">블로그 · 트위터</div>
+          <div class="proj-tab active" data-proj="social">블로그 · 트위터</div>
         </div>
         <div id="projBody"></div>
       </div>
@@ -816,14 +842,6 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
           </div>
         </div>
         <div class="habit-layout" id="habitLayout"></div>
-      </div>
-
-      <!-- REVENUE TRACKER -->
-      <div class="page" id="page-revenue">
-        <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);">
-          <div class="proj-tab active" id="revTabProj" style="margin-bottom:-1px;">프로젝트 수익</div>
-        </div>
-        <div id="revGrid"></div>
       </div>
 
       <!-- HOUSEHOLD -->
@@ -969,6 +987,11 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
       <!-- LIBRARY -->
       <div class="page" id="page-library">
         <div style="max-width:760px;">
+          <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--line);">
+            <div class="proj-tab active" id="libTab-records" style="margin-bottom:-1px;" onclick="switchLibTab('records')">기록</div>
+            <div class="proj-tab" id="libTab-toread" style="margin-bottom:-1px;" onclick="switchLibTab('toread')">읽을 책 📚</div>
+          </div>
+          <div id="libTabRecords">
           <div class="compose-box" style="margin-bottom:20px;">
             <div class="card-title" style="margin-bottom:14px;">새 기록 추가</div>
             <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
@@ -1006,6 +1029,19 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
             <button id="libAddCatBtn" class="ghost" style="font-size:11px;padding:6px 10px;">+ 카테고리</button>
           </div>
           <div id="libList"></div>
+          </div><!-- /libTabRecords -->
+          <div id="libTabToread" style="display:none;">
+            <div class="compose-box" style="margin-bottom:16px;">
+              <div class="card-title" style="margin-bottom:12px;">읽고 싶은 책 추가</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="toReadTitle" class="flex1" placeholder="책 제목...">
+                <input type="text" id="toReadAuthor" placeholder="저자" style="width:130px;">
+                <button id="toReadAddBtn">+</button>
+              </div>
+              <input type="text" id="toReadMemo" placeholder="메모 (추천 이유, 출처...)" style="width:100%;margin-top:8px;">
+            </div>
+            <div id="toReadList"></div>
+          </div>
         </div>
       </div>
 
@@ -1339,7 +1375,7 @@ function saveSBConfig(){
   closeSBModal();
   alert('연결 완료! 지금 데이터를 Supabase에 올릴게요.');
   // 기존 localStorage 데이터 전부 Supabase에 밀어넣기
-  var keys=['todos','blocks','fixedBlocks','routines','goals','gratitude','inbox','past','calEvts','dailyMemo','mealLog','weddingSchedule','weddingSettlement','revData','revGoals','habits','energyLogs','library','libCats','household','assets','debts','fixedExp','nomadBucket','nomadPlan','nomadLog','moodboard','outfit','contentPlans','contentIdeas','projData','dashGreet'];
+  var keys=['todos','blocks','fixedBlocks','routines','goals','gratitude','inbox','past','calEvts','dailyMemo','mealLog','weddingSchedule','weddingSettlement','revData','revGoals','habits','energyLogs','library','libCats','household','assets','debts','fixedExp','nomadBucket','nomadPlan','nomadLog','moodboard','outfit','contentPlans','contentIdeas','projData','dashGreet','goalBucket','toRead'];
   keys.forEach(function(k){ var v=_G_orig(k,null); if(v!==null) sbSet(k,v); });
 }
 
@@ -1416,18 +1452,21 @@ function go(page){
   $id('page-'+page).classList.add('active');
   var navEl = $id('nav-'+page);
   if(navEl) navEl.classList.add('active');
-  var labels={home:'대시보드',daily:'데일리',weekly:'위클리',monthly:'먼슬리',goals:'목표',projects:'프로젝트',inbox:'정보 덤핑',past:'과거 기록',habit:'습관 트래커',revenue:'수익 트래커',energy:'에너지 일기','library':'독서 · 콘텐츠','weekly-retro':'위클리 회고','mood-chart':'기분 패턴',household:'가계부',wealth:'자산 관리',nomad:'한달살기',moodboard:'Interior Moodboard',outfit:'Outfit Archive',content:'콘텐츠 기획'};
+  var labels={home:'대시보드',daily:'데일리',weekly:'위클리',monthly:'먼슬리',goals:'목표',projects:'블로그 · 트위터','wedding-proj':'웨딩 마르체쥬','goec-proj':'고은청','shop-proj':'쇼핑몰 마르체쥬',inbox:'정보 덤핑',past:'과거 기록',habit:'습관 트래커',revenue:'수익 트래커',energy:'에너지 일기','library':'독서 · 콘텐츠','weekly-retro':'위클리 회고','mood-chart':'기분 패턴',household:'가계부',wealth:'자산 관리',nomad:'한달살기',moodboard:'Interior Moodboard',outfit:'Outfit Archive',content:'콘텐츠 기획'};
   $id('pageTitle').textContent = labels[page]||page;
   closeSidebar();
   if(page==='daily') setTimeout(drawTL,60);
   if(page==='weekly') drawWeek();
   if(page==='monthly') drawMonth();
   if(page==='projects') drawProj();
+  if(page==='wedding-proj') drawSingleProj('wedding','weddingProjBody');
+  if(page==='goec-proj') drawSingleProj('goec','goecProjBody');
+  if(page==='shop-proj') drawSingleProj('shop','shopProjBody');
   if(page==='inbox') drawInbox();
   if(page==='past') drawPast();
   if(page==='home'){ drawDash(); }
   if(page==='habit') drawHabits();
-  if(page==='revenue'){ drawRevenue(); bindRevEvents(); }
+  if(page==='goals'){ drawGoals(); drawGoalBucket(); }
   if(page==='household') drawHousehold();
   if(page==='nomad'){ drawBucket(); }
   if(page==='content'){ drawContentPlan(); }
@@ -1660,7 +1699,30 @@ function drawGoals(){
       return '<div class="goal-item"><span>'+esc(g.text)+'</span><span class="del-btn" onclick="delGoal(\''+t+'\','+g.id+')">×</span></div>';
     }).join('');
   });
+  drawGoalBucket();
 }
+function drawGoalBucket(){
+  var el=$id('goalBucketList'); if(!el) return;
+  var items=G('goalBucket',[]);
+  el.innerHTML = items.length===0
+    ? '<div style="font-size:13px;color:var(--ink3);padding:8px 0;">아직 비어있어요 🪣</div>'
+    : items.map(function(x,i){
+        return '<div class="goal-item" style="'+(x.done?'opacity:.5;text-decoration:line-through;':'')+'display:flex;align-items:center;gap:8px;">'
+          +'<input type="checkbox" '+(x.done?'checked':'')+' onchange="togGoalBucket('+i+')" style="width:14px;height:14px;flex-shrink:0;">'
+          +'<span style="flex:1;cursor:pointer;" ondblclick="editGoalBucket('+i+',this)">'+esc(x.text)+'</span>'
+          +'<span class="del-btn" onclick="delGoalBucket('+i+')">×</span>'
+          +'</div>';
+      }).join('');
+  var btn=$id('goalBucketAddBtn');
+  if(btn) btn.onclick=function(){
+    var t=$id('goalBucketInput').value.trim(); if(!t) return;
+    var items=G('goalBucket',[]); items.push({id:Date.now(),text:t,done:false});
+    S('goalBucket',items); $id('goalBucketInput').value=''; drawGoalBucket();
+  };
+}
+function togGoalBucket(i){ var a=G('goalBucket',[]); a[i].done=!a[i].done; S('goalBucket',a); drawGoalBucket(); }
+function delGoalBucket(i){ var a=G('goalBucket',[]); a.splice(i,1); S('goalBucket',a); drawGoalBucket(); }
+function editGoalBucket(i,el){ makeEditable(el,function(v){ var a=G('goalBucket',[]); a[i].text=v; S('goalBucket',a); }); }
 function addGoal(type){
   var t=$id(type+'Input').value.trim(); if(!t)return;
   goals[type].push({id:Date.now(),text:t}); S('goals',goals); $id(type+'Input').value=''; drawGoals();
@@ -1815,9 +1877,127 @@ function delCalEvt(k,id){
 }
 
 // ══════ PROJECTS ══════
+// 독립 프로젝트 페이지 렌더러
+function drawSingleProj(key, bodyId){
+  var body=$id(bodyId); if(!body) return;
+  var meta=PROJ_META[key]; if(!meta) return;
+  if(!projData[key]) projData[key]={tasks:[],ideas:[]};
+  var data=projData[key];
+  var tasks=data.tasks||[], ideas=data.ideas||[];
+
+  var taskHtml = tasks.length===0
+    ? '<div style="font-size:12px;color:var(--ink3);padding:8px 0;">할 일이 없어요</div>'
+    : tasks.map(function(t){
+        return '<div class="status-item">'
+          +'<div style="flex:1;font-size:13px;cursor:text;" ondblclick="editProjTask(\''+key+'\','+t.id+',this)">'+esc(t.text)+'</div>'
+          +'<button class="status-btn s-'+t.status+'" onclick="cycleSingleStatus(\''+key+'\',\''+bodyId+'\','+t.id+')">'+STATUS_LABEL[t.status]+'</button>'
+          +'<div class="del-btn" onclick="delSingleTask(\''+key+'\',\''+bodyId+'\','+t.id+')">×</div>'
+          +'</div>';
+      }).join('');
+
+  var ideaHtml = ideas.length===0
+    ? '<div style="font-size:12px;color:var(--ink3);">아이디어를 던져봐요 💡</div>'
+    : ideas.map(function(x){
+        return '<div class="idea-card"><span style="flex:1;">'+esc(x.text)+'</span>'
+          +'<span class="del-btn" onclick="delSingleIdea(\''+key+'\',\''+bodyId+'\','+x.id+')">×</span></div>';
+      }).join('');
+
+  // 웨딩은 알바 스케줄 섹션 포함
+  var extraHtml = '';
+  if(key==='wedding'){
+    var wsSection=document.createElement('div');
+    wsSection.id='wsSectionWrap';
+    extraHtml='<div id="wsSectionInner" style="margin-top:24px;"></div>';
+  }
+  // 고은청은 콘텐츠 기획 섹션
+  if(key==='goec'){
+    extraHtml='<div style="margin-top:24px;">'
+      +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;margin-bottom:16px;">콘텐츠 기획</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--line);">'
+      +'<div class="proj-tab active" id="pct-plan2" onclick="switchPCT2(\'plan\')">기획서</div>'
+      +'<div class="proj-tab" id="pct-idea2" onclick="switchPCT2(\'idea\')">아이디어뱅크</div>'
+      +'<div class="proj-tab" id="pct-done2" onclick="switchPCT2(\'done\')">업로드완료</div>'
+      +'</div>'
+      +'<div id="projContentBody2"></div>'
+      +'</div>';
+  }
+
+  body.innerHTML = '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;margin-bottom:4px;">'+esc(meta.name)+'</div>'
+    +'<div style="font-size:12px;color:var(--ink3);margin-bottom:20px;">'+esc(meta.desc)+'</div>'
+    +'<div class="card" style="margin-bottom:16px;">'
+    +'<div class="card-title" style="margin-bottom:12px;">할 일</div>'
+    +taskHtml
+    +'<div class="input-row" style="margin-top:12px;">'
+    +'<input type="text" class="flex1" id="singleTaskInput_'+key+'" placeholder="새 할 일...">'
+    +'<button onclick="addSingleTask(\''+key+'\',\''+bodyId+'\')">+</button>'
+    +'</div></div>'
+    +'<div class="card" style="margin-bottom:16px;">'
+    +'<div class="card-title" style="margin-bottom:12px;">아이디어</div>'
+    +ideaHtml
+    +'<div class="input-row" style="margin-top:12px;">'
+    +'<input type="text" class="flex1" id="singleIdeaInput_'+key+'" placeholder="아이디어...">'
+    +'<button onclick="addSingleIdea(\''+key+'\',\''+bodyId+'\')">+</button>'
+    +'</div></div>'
+    +extraHtml;
+
+  if(key==='wedding'){
+    var inner=$id('wsSectionInner');
+    if(inner){ inner.innerHTML=drawWeddingScheduleHTML(); bindWeddingSchedule(); }
+  }
+  if(key==='goec'){
+    switchPCT2('plan');
+  }
+}
+function addSingleTask(key,bodyId){
+  var el=$id('singleTaskInput_'+key); if(!el) return;
+  var t=el.value.trim(); if(!t) return;
+  if(!projData[key]) projData[key]={tasks:[],ideas:[]};
+  projData[key].tasks.push({id:Date.now(),text:t,status:'doing'});
+  S('projData',projData); el.value=''; drawSingleProj(key,bodyId);
+}
+function delSingleTask(key,bodyId,id){
+  if(!projData[key]) return;
+  projData[key].tasks=projData[key].tasks.filter(function(x){return x.id!==id;});
+  S('projData',projData); drawSingleProj(key,bodyId);
+}
+function cycleSingleStatus(key,bodyId,id){
+  if(!projData[key]) return;
+  var t=projData[key].tasks.find(function(x){return x.id===id;}); if(!t) return;
+  t.status=STATUS_NEXT[t.status]; S('projData',projData); drawSingleProj(key,bodyId);
+}
+function addSingleIdea(key,bodyId){
+  var el=$id('singleIdeaInput_'+key); if(!el) return;
+  var t=el.value.trim(); if(!t) return;
+  if(!projData[key]) projData[key]={tasks:[],ideas:[]};
+  projData[key].ideas.push({id:Date.now(),text:t});
+  S('projData',projData); el.value=''; drawSingleProj(key,bodyId);
+}
+function delSingleIdea(key,bodyId,id){
+  if(!projData[key]) return;
+  projData[key].ideas=projData[key].ideas.filter(function(x){return x.id!==id;});
+  S('projData',projData); drawSingleProj(key,bodyId);
+}
+function switchPCT2(tab){
+  ['plan','idea','done'].forEach(function(t){
+    var el=$id('pct-plan2'===('pct-'+t+'2')?'pct-plan2':('pct-'+t+'2'));
+    var btn=$id('pct-'+t+'2'); if(btn) btn.classList.toggle('active',t===tab);
+  });
+  var b=$id('projContentBody2'); if(b) { drawProjContent2(tab); }
+}
+function drawProjContent2(tab){
+  var b=$id('projContentBody2'); if(!b) return;
+  // projContentBody2는 projContentBody와 같은 데이터 공유 — 탭만 다른 곳에 렌더
+  var oldBody=$id('projContentBody');
+  // 임시로 projContentBody를 body2로 교체해서 drawProjContent 활용
+  if(oldBody) oldBody.id='projContentBody_hidden';
+  b.id='projContentBody';
+  drawProjContent(tab);
+  b.id='projContentBody2';
+  if(oldBody) oldBody.id='projContentBody';
+}
 function drawProj(){
-  var validProjs=['wedding','shop','goec','social'];
-  if(validProjs.indexOf(curProj)===-1) curProj='wedding';
+  var validProjs=['social'];
+  curProj='social';
   var p=curProj;
   if(!projData[p]) projData[p]={tasks:[],ideas:[]};
   if(!PROJ_META[p]) return;
@@ -1926,6 +2106,32 @@ function drawProj(){
 // ══════ WEDDING SCHEDULE ══════
 function getWS(){ return G('weddingSchedule',[]); }
 function saveWS(data){ S('weddingSchedule',data); }
+
+// 예식 날짜 기준 할인 금액 계산
+function getWsDiscountInfo(s){
+  if(!s.date) return [];
+  var month = parseInt((s.date||'').split('-')[1]||0);
+  var contractDisc=0, fullPayback=0;
+  if(month>=1&&month<=6)  { contractDisc=60000; fullPayback=60000; }
+  else if(month>=7&&month<=8)  { contractDisc=50000; fullPayback=50000; }
+  else if(month>=9&&month<=10) { contractDisc=40000; fullPayback=40000; }
+  else if(month>=11&&month<=12){ contractDisc=30000; fullPayback=30000; }
+  var result=[];
+  if(contractDisc>0){
+    var contractLabel = s.blogContract
+      ? '<span style="color:#6a9e6a;">잔금 -'+contractDisc.toLocaleString()+'원 차감완료</span>'
+      : '<span style="color:var(--accent2);">계약후기 작성 시 잔금 -'+contractDisc.toLocaleString()+'원</span>';
+    result.push(contractLabel);
+  }
+  if(fullPayback>0){
+    var fullLabel = s.blogFull
+      ? '<span style="color:#6a9e6a;">본식후기 페이백 '+fullPayback.toLocaleString()+'원 완료</span>'
+      : '<span style="color:var(--accent2);">본식후기 작성 시 '+fullPayback.toLocaleString()+'원 페이백</span>';
+    result.push(fullLabel);
+  }
+  if(s.coupleDiscount) result.push('<span style="color:var(--accent2);">💑 짝꿍할인 적용</span>');
+  return result;
+}
 
 // ══════ WEDDING SETTLEMENT (정산 관리) ══════
 function getWSettlement(){ return G('weddingSettlement',[]); }
@@ -2091,7 +2297,7 @@ function drawWeddingScheduleHTML(){
         return n.trim()?'<span style="background:var(--bg3);border:1px solid var(--line);font-size:10px;padding:2px 7px;border-radius:10px;color:var(--ink2);">'+esc(n.trim())+'</span>':'';
       }).join('');
 
-      // 고객 정보 + 금액 정보 표시
+      // 고객 정보 + 금액 정보 + 할인/후기 표시
       var noteHtml='';
       var infoRows=[];
       // 고객 기본 정보
@@ -2099,24 +2305,28 @@ function drawWeddingScheduleHTML(){
         var row1=[];
         if(s.client) row1.push('<span style="color:var(--ink2);">👤 '+esc(s.client)+'</span>');
         if(s.guests) row1.push('<span style="color:var(--ink3);">보증 '+esc(s.guests)+'명</span>');
-        if(s.pkg)    row1.push('<span style="color:var(--ink3);">📦 '+esc(s.pkg)+'</span>');
+        if(s.pkg)    row1.push('<span style="color:var(--ink3);">'+esc(s.pkg)+'</span>');
         infoRows.push(row1.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
       }
       // 금액 정보
-      if(s.total||s.deposit||s.balance||s.discount){
+      if(s.total||s.deposit||s.balance){
         var row2=[];
-        if(s.total)    row2.push('<span style="color:var(--ink2);">💰 총 '+Number(s.total).toLocaleString()+'원</span>');
-        if(s.deposit)  row2.push('<span style="color:var(--ink3);">계약금 '+Number(s.deposit).toLocaleString()+'원</span>');
-        if(s.balance)  row2.push('<span style="color:var(--ink3);">잔금 '+Number(s.balance).toLocaleString()+'원</span>');
-        if(s.discount) row2.push('<span style="color:var(--accent2);">🎁 '+esc(s.discount)+'</span>');
+        if(s.total)   row2.push('<span style="color:var(--ink2);">💰 총 '+Number(s.total).toLocaleString()+'원</span>');
+        if(s.deposit) row2.push('<span style="color:var(--ink3);">계약금 '+Number(s.deposit).toLocaleString()+'원</span>');
+        if(s.balance) row2.push('<span style="color:var(--ink3);">잔금 '+Number(s.balance).toLocaleString()+'원</span>');
         infoRows.push(row2.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
       }
-      // 블로그 후기 + 비고
-      var row3=[];
-      if(s.blogReview) row3.push('<span style="color:#6a9e6a;">✅ 블로그 후기 완료</span>');
-      else             row3.push('<span style="color:var(--ink3);">⬜ 블로그 후기 미완료</span>');
-      if(s.note)       row3.push('<span style="color:var(--ink3);">📝 '+esc(s.note)+'</span>');
-      if(row3.length)  infoRows.push(row3.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
+      // 할인 혜택 계산
+      var discInfo = getWsDiscountInfo(s);
+      if(discInfo.length) infoRows.push(discInfo.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
+      // 후기 상태
+      var row4=[];
+      row4.push(s.blogContract?'<span style="color:#6a9e6a;">📝 계약후기✅</span>':'<span style="color:var(--ink3);">📝 계약후기⬜</span>');
+      row4.push(s.blogFull?'<span style="color:#6a9e6a;">✨ 본식후기✅</span>':'<span style="color:var(--ink3);">✨ 본식후기⬜</span>');
+      if(s.receipt) row4.push('<span style="color:#6a9e6a;">🧾 현금영수증✅</span>');
+      if(s.coupleDiscount) row4.push('<span style="color:var(--accent2);">💑 짝꿍할인'+(s.coupleRef?' ('+esc(s.coupleRef)+'소개)':'')+' </span>');
+      infoRows.push(row4.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
+      if(s.note) infoRows.push('<span style="color:var(--ink3);">📌 '+esc(s.note)+'</span>');
 
       if(infoRows.length){
         noteHtml='<div style="margin-top:6px;padding:8px 10px;background:var(--bg2);border-radius:4px;font-size:11px;display:flex;flex-direction:column;gap:5px;">'
@@ -2184,37 +2394,50 @@ function drawWeddingScheduleHTML(){
     +'<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px;">'
     +'<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;letter-spacing:.1em;">고객 정보</div>'
     +'<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:10px;margin-bottom:8px;">'
-    +'<div>'
-    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">고객명</div>'
-    +'<input type="text" id="wsClient" placeholder="홍길동" style="width:100%;">'
-    +'</div>'
-    +'<div>'
-    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">보증하객</div>'
-    +'<input type="number" id="wsGuests" placeholder="명" min="0" style="width:100%;">'
-    +'</div>'
-    +'<div>'
-    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">패키지</div>'
-    +'<input type="text" id="wsPkg" placeholder="스탠다드, 프리미엄..." style="width:100%;">'
-    +'</div>'
-    +'</div>'
-    +'</div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">고객명</div>'
+    +'<input type="text" id="wsClient" placeholder="홍길동" style="width:100%;"></div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">보증하객</div>'
+    +'<input type="number" id="wsGuests" placeholder="명" min="0" style="width:100%;"></div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">패키지 (인원구성)</div>'
+    +'<select id="wsPkg" style="width:100%;"><option value="">선택</option><option value="2인1조">2인1조 (기본)</option><option value="4인2조">4인2조</option></select></div>'
+    +'</div></div>'
     // 행 4: 금액 정보
     +'<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px;">'
     +'<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;letter-spacing:.1em;">금액 정보</div>'
-    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">'
     +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">총 서비스 금액</div><input type="number" id="wsTotal" placeholder="0" min="0" style="width:100%;"></div>'
-    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">계약금</div><input type="number" id="wsDeposit" placeholder="0" min="0" style="width:100%;"></div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">계약금 (50%)</div><input type="number" id="wsDeposit" placeholder="0" min="0" style="width:100%;"></div>'
     +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">잔금</div><input type="number" id="wsBalance" placeholder="0" min="0" style="width:100%;"></div>'
-    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">할인혜택</div><input type="text" id="wsDiscount" placeholder="예: 10% 할인" style="width:100%;"></div>'
-    +'</div>'
-    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
-    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--ink2);">'
-    +'<input type="checkbox" id="wsBlogReview" style="width:14px;height:14px;"> 블로그 후기 완료'
+    +'</div></div>'
+    // 행 5: 할인/후기/체크
+    +'<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px;">'
+    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;letter-spacing:.1em;">후기 & 혜택</div>'
+    +'<div style="display:flex;flex-direction:column;gap:8px;">'
+    +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;">'
+    +'<input type="checkbox" id="wsBlogContract" style="width:14px;height:14px;">'
+    +'<span style="flex:1;">📝 블로그 계약후기 작성</span>'
+    +'<span style="font-size:11px;color:var(--accent2);" id="wsBlogContractAmt"></span>'
     +'</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;">'
+    +'<input type="checkbox" id="wsBlogFull" style="width:14px;height:14px;">'
+    +'<span style="flex:1;">✨ 본식후기 작성</span>'
+    +'<span style="font-size:11px;color:var(--accent2);" id="wsBlogFullAmt"></span>'
+    +'</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;">'
+    +'<input type="checkbox" id="wsCoupleDiscount" style="width:14px;height:14px;">'
+    +'<span style="flex:1;">💑 짝꿍할인 (소개받음)</span>'
+    +'</label>'
+    +'<div id="wsCoupleRefWrap" style="display:none;padding:6px 10px;background:var(--bg2);border-radius:4px;">'
+    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">소개해준 고객명</div>'
+    +'<input type="text" id="wsCoupleRef" placeholder="홍길동" style="width:100%;">'
     +'</div>'
+    +'<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;">'
+    +'<input type="checkbox" id="wsReceipt" style="width:14px;height:14px;">'
+    +'<span>🧾 현금영수증 발행</span>'
+    +'</label>'
+    +'</div></div>'
     +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">비고</div>'
     +'<input type="text" id="wsNote" placeholder="기타 특이사항..." style="width:100%;"></div>'
-    +'</div>'
 
     +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
     +'<button class="ghost" onclick="toggleWSForm()">취소</button>'
@@ -2230,6 +2453,8 @@ function drawWeddingScheduleHTML(){
 function bindWeddingSchedule(){
   var btn=$id('wsAddBtn'); if(btn) btn.onclick=addWS;
   var ti=$id('wsTime'); if(ti) ti.onkeydown=function(e){ if(e.key==='Enter') addWS(); };
+  var cd=$id('wsCoupleDiscount');
+  if(cd) cd.onchange=function(){ var w=$id('wsCoupleRefWrap'); if(w) w.style.display=this.checked?'block':'none'; };
 }
 
 function toggleWSForm(){
@@ -2262,18 +2487,25 @@ function addWS(){
   var total=($id('wsTotal')||{value:''}).value.trim();
   var deposit=($id('wsDeposit')||{value:''}).value.trim();
   var balance=($id('wsBalance')||{value:''}).value.trim();
-  var discount=($id('wsDiscount')||{value:''}).value.trim();
-  var blogReview=($id('wsBlogReview')||{checked:false}).checked;
+  var blogContract=($id('wsBlogContract')||{checked:false}).checked;
+  var blogFull=($id('wsBlogFull')||{checked:false}).checked;
+  var coupleDiscount=($id('wsCoupleDiscount')||{checked:false}).checked;
+  var coupleRef=($id('wsCoupleRef')||{value:''}).value.trim();
+  var receipt=($id('wsReceipt')||{checked:false}).checked;
   var note=($id('wsNote')||{value:''}).value.trim();
   if(!place&&!name){ alert('장소 또는 알바 이름을 입력해주세요'); return; }
   var data=getWS();
-  data.push({id:'ws'+Date.now(),date:date,time:time,place:place,count:count||'?',name:name,client:client,guests:guests,pkg:pkg,total:total,deposit:deposit,balance:balance,discount:discount,blogReview:blogReview,note:note});
+  data.push({id:'ws'+Date.now(),date:date,time:time,place:place,count:count||'?',name:name,client:client,guests:guests,pkg:pkg,total:total,deposit:deposit,balance:balance,blogContract:blogContract,blogFull:blogFull,coupleDiscount:coupleDiscount,coupleRef:coupleRef,receipt:receipt,note:note});
   data.sort(function(a,b){ return (a.date+a.time)<(b.date+b.time)?-1:1; });
   saveWS(data);
-  ['wsTime','wsPlace','wsCount','wsName','wsClient','wsGuests','wsPkg','wsTotal','wsDeposit','wsBalance','wsDiscount','wsNote'].forEach(function(id){
+  ['wsTime','wsPlace','wsCount','wsName','wsClient','wsGuests','wsTotal','wsDeposit','wsBalance','wsNote','wsCoupleRef'].forEach(function(id){
     if($id(id)) $id(id).value='';
   });
-  if($id('wsBlogReview')) $id('wsBlogReview').checked=false;
+  ['wsBlogContract','wsBlogFull','wsCoupleDiscount','wsReceipt'].forEach(function(id){
+    if($id(id)) $id(id).checked=false;
+  });
+  if($id('wsPkg')) $id('wsPkg').value='';
+  if($id('wsCoupleRefWrap')) $id('wsCoupleRefWrap').style.display='none';
   toggleWSForm();
   drawProj();
 }
@@ -2290,7 +2522,7 @@ function editWS(id){
 
   var html='';
   html+='<div id="wsEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
-  html+='<div style="background:var(--paper);padding:24px;width:min(480px,92vw);border:1px solid var(--line);max-height:90vh;overflow-y:auto;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(520px,94vw);border:1px solid var(--line);max-height:90vh;overflow-y:auto;">';
   html+='<div style="font-size:14px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:16px;">스케줄 수정</div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">날짜</div><input type="date" id="wsE_date" value="'+esc(s.date||'')+'" style="width:100%;"></div>';
@@ -2304,25 +2536,27 @@ function editWS(id){
   html+='<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:10px;margin-bottom:8px;">';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">고객명</div><input type="text" id="wsE_client" value="'+esc(s.client||'')+'" placeholder="홍길동" style="width:100%;"></div>';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">보증하객</div><input type="number" id="wsE_guests" value="'+esc(s.guests||'')+'" placeholder="명" style="width:100%;"></div>';
-  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">패키지</div><input type="text" id="wsE_pkg" value="'+esc(s.pkg||'')+'" placeholder="스탠다드..." style="width:100%;"></div>';
-  html+='</div>';
-  html+='</div>';
+  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">패키지</div>';
+  html+='<select id="wsE_pkg" style="width:100%;"><option value="">선택</option><option value="2인1조"'+(s.pkg==="2인1조"?" selected":"")+'>2인1조</option><option value="4인2조"'+(s.pkg==="4인2조"?" selected":"")+'>4인2조</option></select></div>';
+  html+='</div></div>';
   html+='<div style="border-top:1px solid var(--line);padding-top:12px;margin-bottom:12px;">';
   html+='<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;">금액 정보</div>';
-  html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px;">';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">총 서비스 금액</div><input type="number" id="wsE_total" value="'+esc(s.total||'')+'" placeholder="0" style="width:100%;"></div>';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">계약금</div><input type="number" id="wsE_deposit" value="'+esc(s.deposit||'')+'" placeholder="0" style="width:100%;"></div>';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">잔금</div><input type="number" id="wsE_balance" value="'+esc(s.balance||'')+'" placeholder="0" style="width:100%;"></div>';
-  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">할인혜택</div><input type="text" id="wsE_discount" value="'+esc(s.discount||'')+'" placeholder="예: 10% 할인" style="width:100%;"></div>';
-  html+='</div>';
-  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">';
-  html+='<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--ink2);">';
-  html+='<input type="checkbox" id="wsE_blogReview"'+(s.blogReview?' checked':'')+' style="width:14px;height:14px;"> 블로그 후기 완료';
-  html+='</label>';
-  html+='</div>';
+  html+='</div></div>';
+  html+='<div style="border-top:1px solid var(--line);padding-top:12px;margin-bottom:12px;">';
+  html+='<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;">후기 & 혜택</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:8px;">';
+  html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_blogContract"'+(s.blogContract?' checked':'')+' style="width:14px;height:14px;"><span>📝 블로그 계약후기 작성</span></label>';
+  html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_blogFull"'+(s.blogFull?' checked':'')+' style="width:14px;height:14px;"><span>✨ 본식후기 작성</span></label>';
+  html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_coupleDiscount"'+(s.coupleDiscount?' checked':'')+' style="width:14px;height:14px;" onchange="var w=this.closest('div[style]').nextElementSibling;if(w)w.style.display=this.checked?'block':'none';"><span>💑 짝꿍할인 (소개받음)</span></label>';
+  html+='<div id="wsE_coupleRefWrap" style="display:'+(s.coupleDiscount?'block':'none')+';padding:6px 10px;background:var(--bg2);border-radius:4px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">소개해준 고객명</div><input type="text" id="wsE_coupleRef" value="'+esc(s.coupleRef||'')+'" placeholder="홍길동" style="width:100%;"></div>';
+  html+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:7px 10px;background:var(--bg2);border-radius:4px;"><input type="checkbox" id="wsE_receipt"'+(s.receipt?' checked':'')+' style="width:14px;height:14px;"><span>🧾 현금영수증 발행</span></label>';
+  html+='</div></div>';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">비고</div><input type="text" id="wsE_note" value="'+esc(s.note||'')+'" placeholder="기타 특이사항..." style="width:100%;"></div>';
-  html+='</div>';
-  html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">';
   html+='<button class="ghost" id="wsEditCancelBtn">취소</button>';
   html+='<button id="wsEditSaveBtn">저장</button>';
   html+='</div></div></div>';
@@ -2346,8 +2580,11 @@ function editWS(id){
       total:($id('wsE_total').value||'').trim(),
       deposit:($id('wsE_deposit').value||'').trim(),
       balance:($id('wsE_balance').value||'').trim(),
-      discount:($id('wsE_discount').value||'').trim(),
-      blogReview:($id('wsE_blogReview')||{checked:false}).checked,
+      blogContract:($id('wsE_blogContract')||{checked:false}).checked,
+      blogFull:($id('wsE_blogFull')||{checked:false}).checked,
+      coupleDiscount:($id('wsE_coupleDiscount')||{checked:false}).checked,
+      coupleRef:($id('wsE_coupleRef')||{value:''}).value.trim(),
+      receipt:($id('wsE_receipt')||{checked:false}).checked,
       note:($id('wsE_note').value||'').trim()
     };
     if(!updated.date){ alert('날짜를 입력해주세요'); return; }
@@ -2357,7 +2594,6 @@ function editWS(id){
     $id('wsEditModal').remove();
     drawProj();
   };
-  // 저장 버튼 포커스
   setTimeout(function(){ var el=$id('wsE_date'); if(el) el.focus(); },60);
 }
 
@@ -2770,6 +3006,9 @@ function bindEvents(){
   $id('nav-goals').onclick    = function(){ go('goals'); };
   $id('nav-past').onclick     = function(){ go('past'); };
   $id('nav-projects').onclick = function(){ go('projects'); };
+  $id('nav-wedding-proj').onclick = function(){ go('wedding-proj'); };
+  $id('nav-goec-proj').onclick    = function(){ go('goec-proj'); };
+  $id('nav-shop-proj').onclick    = function(){ go('shop-proj'); };
   $id('nav-inbox').onclick    = function(){ go('inbox'); };
 
   // todo
@@ -2862,7 +3101,6 @@ function bindEvents(){
   // new pages nav
   $id('nav-home').onclick         = function(){ go('home'); };
   $id('nav-habit').onclick        = function(){ go('habit'); };
-  $id('nav-revenue').onclick      = function(){ go('revenue'); };
   $id('nav-household').onclick    = function(){ go('household'); };
   $id('nav-wealth').onclick        = function(){ go('wealth'); };
   $id('nav-energy').onclick       = function(){ go('energy'); };
@@ -3022,9 +3260,6 @@ function bindEvents(){
       document.querySelectorAll('.e-dot').forEach(function(d){d.classList.toggle('active',parseInt(d.getAttribute('data-lv'))<=selLevel);});
     };
   });
-
-  // revenue
-  $id('nav-revenue').onclick = function(){ go('revenue'); };
 
   // household
   $id('hhAddBtn').onclick = addHH;
@@ -3296,7 +3531,6 @@ function addRevEntry(key){
   revData[key].unshift({id:entryId,type:type,amt:amt,memo:memo,date:(d.getMonth()+1)+'/'+d.getDate(),ym:d.getFullYear()+'-'+pad(d.getMonth()+1),hhId:hhId});
   S('revData',revData);
   $id('revAmt_'+key).value=''; $id('revMemo_'+key).value='';
-  drawRevenue(); bindRevEvents();
   // 가계부 페이지가 열려있으면 즉시 갱신
   if(document.getElementById('page-household')&&document.getElementById('page-household').classList.contains('active')) drawHousehold();
   showToast('가계부 수입에도 자동 반영됐어요 💰');
@@ -3737,13 +3971,72 @@ function addBucket(){
 }
 function togBucket(i){ var items=G('nomadBucket',[]); items[i].done=!items[i].done; S('nomadBucket',items); drawBucket(); }
 function editBucket(i){
-  var items=G('nomadBucket',[]), x=items[i];
-  var city=prompt('도시/나라',x.city||''); if(city===null) return;
-  var note=prompt('메모',x.note||'');
-  items[i]=Object.assign({},x,{city:city.trim(),note:note||''});
-  S('nomadBucket',items); drawBucket();
+  var items=G('nomadBucket',[]), x=items[i]; if(!x) return;
+  var old=$id('bucketEditModal'); if(old) old.remove();
+  var html='<div id="bucketEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(400px,92vw);border:1px solid var(--line);">';
+  html+='<div style="font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;">버킷리스트 수정</div>';
+  html+='<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">도시 / 나라</div>';
+  html+='<input type="text" id="bkE_city" value="'+esc(x.city||'')+'" style="width:100%;"></div>';
+  html+='<div style="margin-bottom:16px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:4px;">메모</div>';
+  html+='<textarea id="bkE_note" style="width:100%;min-height:80px;resize:vertical;display:block;">'+esc(x.note||'')+'</textarea></div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html+='<button class="ghost" id="bkECancelBtn">취소</button>';
+  html+='<button id="bkESaveBtn">저장</button>';
+  html+='</div></div></div>';
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+  $id('bkECancelBtn').onclick=function(){ $id('bucketEditModal').remove(); };
+  $id('bucketEditModal').onclick=function(e){ if(e.target===$id('bucketEditModal')) $id('bucketEditModal').remove(); };
+  $id('bkESaveBtn').onclick=function(){
+    var city=$id('bkE_city').value.trim(); if(!city){ alert('도시/나라를 입력해주세요'); return; }
+    items[i]=Object.assign({},x,{city:city,note:$id('bkE_note').value.trim()});
+    S('nomadBucket',items); $id('bucketEditModal').remove(); drawBucket();
+  };
+  setTimeout(function(){ var el=$id('bkE_city'); if(el){ el.focus(); el.select(); } },60);
 }
 function delBucket(i){ var items=G('nomadBucket',[]); items.splice(i,1); S('nomadBucket',items); drawBucket(); }
+
+// ── 읽을 책 ──
+function switchLibTab(tab){
+  var isRec = tab==='records';
+  var rec=$id('libTabRecords'), tor=$id('libTabToread');
+  if(rec) rec.style.display=isRec?'block':'none';
+  if(tor) tor.style.display=isRec?'none':'block';
+  var t1=$id('libTab-records'), t2=$id('libTab-toread');
+  if(t1) t1.classList.toggle('active',isRec);
+  if(t2) t2.classList.toggle('active',!isRec);
+  if(!isRec) drawToRead();
+}
+function drawToRead(){
+  var el=$id('toReadList'); if(!el) return;
+  var items=G('toRead',[]);
+  el.innerHTML = items.length===0
+    ? '<div style="font-size:13px;color:var(--ink3);padding:12px 0;">읽고 싶은 책을 추가해봐요 📚</div>'
+    : items.map(function(x,i){
+        return '<div class="content-card" style="'+(x.done?'opacity:.5;':'')+'padding:12px;margin-bottom:8px;border:1px solid var(--line);">'
+          +'<div style="display:flex;align-items:flex-start;gap:10px;">'
+          +'<input type="checkbox" '+(x.done?'checked':'')+' onchange="togToRead('+i+')" style="margin-top:3px;width:14px;height:14px;flex-shrink:0;">'
+          +'<div style="flex:1;">'
+          +'<div style="font-size:14px;color:var(--ink);'+(x.done?'text-decoration:line-through;':'')+'">'+esc(x.title)+'</div>'
+          +(x.author?'<div style="font-size:11px;color:var(--ink3);">'+esc(x.author)+'</div>':'')
+          +(x.memo?'<div style="font-size:11px;color:var(--ink2);margin-top:4px;">'+esc(x.memo)+'</div>':'')
+          +'</div>'
+          +'<span class="del-btn" onclick="delToRead('+i+')">×</span>'
+          +'</div></div>';
+      }).join('');
+  var btn=$id('toReadAddBtn');
+  if(btn) btn.onclick=function(){
+    var title=$id('toReadTitle').value.trim(); if(!title) return;
+    var items=G('toRead',[]);
+    items.unshift({id:Date.now(),title:title,author:$id('toReadAuthor').value.trim(),memo:$id('toReadMemo').value.trim(),done:false});
+    S('toRead',items);
+    ['toReadTitle','toReadAuthor','toReadMemo'].forEach(function(id){ if($id(id)) $id(id).value=''; });
+    drawToRead();
+  };
+}
+function togToRead(i){ var a=G('toRead',[]); a[i].done=!a[i].done; S('toRead',a); drawToRead(); }
+function delToRead(i){ var a=G('toRead',[]); a.splice(i,1); S('toRead',a); drawToRead(); }
 function drawPlan(){
   var items=G('nomadPlan',[]);
   if(items.length===0){
@@ -4495,7 +4788,6 @@ function exportCSV(){
   html += '<div style="font-size:20px;margin-bottom:18px;letter-spacing:.05em;">데이터 내보내기</div>';
   html += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">';
   html += '<label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="exp-hh" checked> 가계부</label>';
-  html += '<label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="exp-rev" checked> 수익 트래커</label>';
   html += '<label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="exp-todo"> 투두리스트</label>';
   html += '<label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="exp-energy"> 에너지 일기</label>';
   html += '<label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;"><input type="checkbox" id="exp-habit"> 습관 트래커</label>';
@@ -4677,7 +4969,6 @@ function init(){
   drawTodos();
   drawHabits();
   drawEnergy();
-  drawRevenue(); bindRevEvents();
   drawRoutines();
   drawGoals();
   drawWeek();
