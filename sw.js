@@ -1,4 +1,4 @@
-const CACHE = 'hem-os-v1';
+const CACHE = 'hem-os-v9';
 const ASSETS = ['./', './index.html'];
 
 self.addEventListener('install', e => {
@@ -15,8 +15,8 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      return cached || fetch(e.request).catch(() => cached);
-    })
+    fetch(e.request).catch(() =>
+      caches.match(e.request)
+    )
   );
 });

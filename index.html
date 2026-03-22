@@ -5158,15 +5158,12 @@ function drawGoecPlaces(){
   var formHtml='<div class="compose-box" style="margin-bottom:20px;">'
     +'<div class="card-title" style="margin-bottom:12px;">새 플레이스 추가</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">'
-    +'<div style="flex:1;position:relative;">'
-    +'<input type="text" id="placeTitle" class="flex1" placeholder="장소 이름 입력 후 🔍 클릭..." style="width:100%;" autocomplete="off" oninput="searchKakaoPlace(this.value)">'
-    +'<div id="placeSearchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--paper);border:1px solid var(--line);z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>'
-    +'</div>'
+    +'<input type="text" id="placeTitle" class="flex1" placeholder="장소 이름..." style="width:100%;" autocomplete="off">'
     +'<select id="placeCat" style="width:130px;">'
     +['☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'].map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('')
     +'</select>'
     +'</div>'
-    +'<input type="text" id="placeAddr" placeholder="주소 (🔍 클릭하면 자동 입력)" style="width:100%;margin-bottom:8px;" readonly>'
+    +'<input type="text" id="placeAddr" placeholder="주소 또는 동네 (선택사항 — 입력하면 지도 연결 정확해짐)" style="width:100%;margin-bottom:8px;">'
     +'<textarea id="placeMemo" placeholder="메모 (분위기, 추천 메뉴, 이유...)" style="width:100%;min-height:60px;resize:vertical;display:block;margin-bottom:8px;"></textarea>'
     +'<div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;">'
     +'<div style="display:flex;align-items:center;gap:8px;">'
@@ -5233,54 +5230,7 @@ function drawGoecPlaces(){
 
 function setPlaceCat(c){ placeSelCat=c; drawGoecPlaces(); }
 
-// 카카오 우편번호 서비스로 주소 검색 (API 키 불필요)
-function searchKakaoPlace(query){
-  // 타이핑 시 드롭다운에 '🔍 주소 검색 클릭' 안내 표시
-  var dd=$id('placeSearchDropdown'); if(!dd) return;
-  if(!query||query.length<1){ dd.style.display='none'; return; }
-  dd.style.display='block';
-  dd.innerHTML='<div onclick="openAddrSearch()" style="padding:12px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;">'
-    +'<span style="font-size:16px;">🔍</span>'
-    +'<div><div style="font-size:13px;color:var(--ink);">주소 검색하기</div>'
-    +'<div style="font-size:11px;color:var(--ink3);">클릭하면 카카오 주소 검색 창이 열려요</div></div>'
-    +'</div>';
-}
 
-function openAddrSearch(){
-  var dd=$id('placeSearchDropdown'); if(dd) dd.style.display='none';
-  var titleEl=$id('placeTitle');
-  var query = titleEl ? titleEl.value.trim() : '';
-  // 카카오 우편번호 서비스 스크립트 동적 로드
-  function runSearch(){
-    new daum.Postcode({
-      oncomplete: function(data){
-        var addr = data.roadAddress || data.jibunAddress;
-        var addrEl=$id('placeAddr');
-        if(addrEl){ addrEl.value=addr; addrEl.readOnly=false; }
-        // 장소명이 비어있으면 동네명으로 채우기
-        if(titleEl && !titleEl.value.trim()){
-          titleEl.value = data.buildingName || data.bname || addr;
-        }
-      }
-    }).open();
-  }
-  if(window.daum && window.daum.Postcode){
-    runSearch();
-  } else {
-    var s=document.createElement('script');
-    s.src='https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-    s.onload=runSearch;
-    document.head.appendChild(s);
-  }
-}
-
-// 드롭다운 외부 클릭 시 닫기
-document.addEventListener('click', function(e){
-  var dd=$id('placeSearchDropdown');
-  if(dd && !dd.contains(e.target) && e.target.id!=='placeTitle'){
-    dd.style.display='none';
-  }
-});
 
 function addPlace(){
   var title=($id('placeTitle')||{value:''}).value.trim(); if(!title) return;
