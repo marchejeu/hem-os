@@ -5127,9 +5127,11 @@ function editRec(i){
 }
 
 // ══════ GOEC PLACES ══════
+var NAVER_MAP_CLIENT_ID = 'YOUR_NAVER_CLIENT_ID'; // ← 여기에 Client ID 입력
 var PLACE_CATS = ['전체','☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'];
 var placeSelCat = null;
 var placePhotoData = null;
+var naverMapLoaded = false;
 
 function drawGoecPlaces(){
   var body=$id('goecPlacesBody'); if(!body) return;
@@ -5184,6 +5186,7 @@ function drawGoecPlaces(){
       +(x.memo?'<div style="font-size:12px;color:var(--ink2);line-height:1.6;">'+esc(x.memo)+'</div>':'')
       +'</div>'
       +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">'
+      +(x.addr?'<button onclick="openNaverMap('+realIdx+')" class="ghost" style="font-size:10px;padding:3px 8px;background:#e8f5e9;border-color:#7a9e7e;color:#3d6e42;">🗺 지도</button>':'')
       +'<button onclick="togPlaceVisited('+realIdx+')" class="ghost" style="font-size:10px;padding:3px 8px;">'+(x.visited?'취소':'다녀옴✓')+'</button>'
       +'<button onclick="editPlace('+realIdx+')" class="ghost" style="font-size:10px;padding:3px 8px;">수정</button>'
       +'<span class="del-btn" onclick="delPlace('+realIdx+')">×</span>'
@@ -5206,7 +5209,10 @@ function drawGoecPlaces(){
   }
 
   body.innerHTML=formHtml
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">'+filterHtml+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">'+filterHtml+'</div>'
+    +'<div style="display:flex;justify-content:flex-end;margin-bottom:16px;">'
+    +'<button onclick="openNaverMapAll()" class="ghost" style="font-size:11px;padding:6px 14px;background:#e8f5e9;border-color:#7a9e7e;color:#3d6e42;">🗺 전체 지도 보기</button>'
+    +'</div>'
     +listHtml;
 
   // 이벤트 바인딩
@@ -5251,6 +5257,118 @@ function togPlaceVisited(i){
 }
 function delPlace(i){
   var items=G('goecPlaces',[]); items.splice(i,1); S('goecPlaces',items); drawGoecPlaces();
+}
+
+// 개별 지도 보기 — 네이버 지도 앱/웹으로 연결
+function openNaverMap(i){
+  var items=G('goecPlaces',[]), x=items[i]; if(!x||!x.addr) return;
+  // 모바일: 네이버 지도 앱 딥링크, 웹 폴백
+  var query=encodeURIComponent(x.addr);
+  var appUrl='nmap://search?query='+query+'&appname=com.marchejeu.hemos';
+  var webUrl='https://map.naver.com/v5/search/'+query;
+  // 앱 시도 후 0.5초 안에 앱이 안 열리면 웹으로
+  var start=Date.now();
+  var iframe=document.createElement('iframe');
+  iframe.style.display='none';
+  iframe.src=appUrl;
+  document.body.appendChild(iframe);
+  setTimeout(function(){
+    document.body.removeChild(iframe);
+    if(Date.now()-start<1500) window.open(webUrl,'_blank');
+  },600);
+}
+
+// 전체 지도 뷰 — 네이버 지도 API로 핀 표시
+function openNaverMapAll(){
+  var items=G('goecPlaces',[]).filter(function(x){return x.addr;});
+  if(!items.length){ showToast('주소가 입력된 장소가 없어요 📍'); return; }
+
+  var old=$id('naverMapModal'); if(old) old.remove();
+
+  var html='<div id="naverMapModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);width:min(680px,96vw);height:min(560px,90vh);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;">';
+  html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0;">';
+  html+='<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;">가볼 플레이스 지도</div>';
+  html+='<span onclick="document.getElementById(\'naverMapModal\').remove()" style="cursor:pointer;font-size:20px;color:var(--ink3);">×</span>';
+  html+='</div>';
+  html+='<div id="naverMapContainer" style="flex:1;width:100%;position:relative;">';
+  html+='<div id="naverMap" style="width:100%;height:100%;"></div>';
+  html+='<div id="naverMapLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--bg2);font-size:13px;color:var(--ink3);">지도 불러오는 중...</div>';
+  html+='</div>';
+  html+='</div></div>';
+
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+  $id('naverMapModal').onclick=function(e){ if(e.target===$id('naverMapModal')) $id('naverMapModal').remove(); };
+
+  loadNaverMapScript(function(){
+    initNaverMapWithPlaces(items);
+  });
+}
+
+function loadNaverMapScript(cb){
+  if(window.naver&&window.naver.maps){ cb(); return; }
+  var s=document.createElement('script');
+  s.src='https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId='+NAVER_MAP_CLIENT_ID+'&submodules=geocoder';
+  s.onload=function(){ setTimeout(cb,300); };
+  s.onerror=function(){
+    var loading=$id('naverMapLoading');
+    if(loading) loading.innerHTML='지도를 불러오지 못했어요.<br><span style="font-size:11px;color:var(--ink3);">Client ID를 확인해주세요</span>';
+  };
+  document.head.appendChild(s);
+}
+
+function initNaverMapWithPlaces(items){
+  var loading=$id('naverMapLoading');
+  var mapEl=$id('naverMap');
+  if(!mapEl||!window.naver) return;
+  if(loading) loading.style.display='none';
+
+  var map=new naver.maps.Map(mapEl,{
+    center: new naver.maps.LatLng(37.5665, 126.9780), // 서울 기본값
+    zoom: 12
+  });
+
+  var bounds=new naver.maps.LatLngBounds();
+  var geocoded=0;
+
+  items.forEach(function(x,i){
+    naver.maps.Service.geocode({query:x.addr}, function(status,res){
+      if(status===naver.maps.Service.Status.OK && res.v2.addresses.length>0){
+        var addr=res.v2.addresses[0];
+        var latlng=new naver.maps.LatLng(addr.y, addr.x);
+        bounds.extend(latlng);
+
+        var catIcon=x.cat?x.cat.split(' ')[0]:'📍';
+        var marker=new naver.maps.Marker({
+          position:latlng,
+          map:map,
+          title:x.title,
+          icon:{
+            content:'<div style="background:'+(x.visited?'#6a9e6a':'var(--accent2)')+';color:#fff;padding:4px 8px;border-radius:16px;font-size:11px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2);">'+catIcon+' '+esc(x.title)+'</div>',
+            anchor: new naver.maps.Point(0,0)
+          }
+        });
+
+        var infoWindow=new naver.maps.InfoWindow({
+          content:'<div style="padding:10px 12px;min-width:160px;font-size:12px;">'
+            +'<div style="font-weight:600;margin-bottom:4px;">'+esc(x.title)+'</div>'
+            +(x.addr?'<div style="color:#666;font-size:11px;margin-bottom:4px;">📍 '+esc(x.addr)+'</div>':'')
+            +(x.memo?'<div style="color:#444;font-size:11px;">'+esc(x.memo)+'</div>':'')
+            +(x.visited?'<div style="color:#6a9e6a;font-size:11px;margin-top:4px;">✅ 다녀옴</div>':'')
+            +'</div>'
+        });
+
+        naver.maps.Event.addListener(marker,'click',function(){
+          infoWindow.open(map,marker);
+        });
+      }
+      geocoded++;
+      if(geocoded===items.length && !bounds.isEmpty()){
+        map.fitBounds(bounds,{top:60,right:40,bottom:40,left:40});
+      }
+    });
+  });
 }
 function editPlace(i){
   var items=G('goecPlaces',[]), x=items[i]; if(!x) return;
