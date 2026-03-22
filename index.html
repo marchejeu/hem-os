@@ -6036,7 +6036,7 @@ function renderSearch(q){
   // 하이라이트 함수
   function hl(str){
     var s=esc(str||'');
-    return s.replace(new RegExp('('+q.split('').map(function(c){return c.replace(/[.*+?^${}()|\[\]\\]/,'\\\\$&');}).join('')+')','gi'),'<mark style="background:#f5e6a3;color:var(--ink);">$1\x3c/mark\x3e');
+    return s.replace(new RegExp('('+q.split('').map(function(c){return c.replace(/[.*+?^${}()|\[\]\\]/,'\\$&');}).join('')+')','gi'),'\x3cmark style="background:#f5e6a3;color:var(--ink);"\x3e$1\x3c/mark\x3e');
   }
 
   res.innerHTML='<div style="padding:6px 16px 4px;font-size:10px;color:var(--ink3);letter-spacing:.1em;">'+hits.length+'개 결과</div>'
