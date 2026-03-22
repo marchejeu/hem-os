@@ -1427,7 +1427,7 @@ function go(page){
   if(page==='past') drawPast();
   if(page==='home'){ drawDash(); }
   if(page==='habit') drawHabits();
-  if(page==='revenue') drawRevenue();
+  if(page==='revenue'){ drawRevenue(); bindRevEvents(); }
   if(page==='household') drawHousehold();
   if(page==='nomad'){ drawBucket(); }
   if(page==='content'){ drawContentPlan(); }
@@ -1688,13 +1688,17 @@ function drawWeek(){
 
   $id('weekGrid').innerHTML = dates.map(function(d){
     var k=dkey(d.getFullYear(),d.getMonth()+1,d.getDate());
-    var evts=sortEvts(calEvts[k]||[]);
+    var weddingForDay=G('weddingSchedule',[]).filter(function(s){ return s.date===k; }).map(function(s){
+      return {id:'ws_'+s.id, time:s.time||'',text:'💒 '+(s.place||'웨딩')+(s.client?' · '+s.client:''),isWedding:true};
+    });
+    var evts=sortEvts(weddingForDay.concat(calEvts[k]||[]));
     var isT=k===tk;
     var evtHtml=evts.map(function(ev){
+      var wStyle=ev.isWedding?'background:#f5ece2;border-left:2px solid #c4a882;padding-left:4px;':'';
       var timePart = ev.time ? '<span style="font-size:10px;color:var(--accent);margin-right:3px;">'+esc(ev.time)+'</span>' : '';
-      return '<div class="week-evt">'
+      return '<div class="week-evt" style="'+wStyle+'">'
         +'<span style="flex:1;word-break:break-all;">'+timePart+esc(ev.text)+'</span>'
-        +'<span class="edel" onclick="delCalEvt(\''+k+'\','+ev.id+')">×</span>'
+        +(ev.isWedding?'':'<span class="edel" onclick="delCalEvt(\''+k+'\','+ev.id+')">×</span>')
         +'</div>';
     }).join('');
     var y2=d.getFullYear(), m2=d.getMonth()+1, d2=d.getDate();
@@ -1737,13 +1741,18 @@ function drawMonth(){
     var fixedExps=G('fixedExp',[]).filter(function(x){return x.day===d;}).map(function(x){
       return {time:'',text:(x.name||'고정지출')+' -'+fmtMoney(x.amt||0),fixed:true,isExp:true};
     });
-    rawEvts = fixedExps.concat(rawEvts);
+    // 웨딩 스케줄 연동
+    var weddingEvts=G('weddingSchedule',[]).filter(function(s){ return s.date===k; }).map(function(s){
+      return {time:s.time||'',text:'💒 '+(s.place||'웨딩')+(s.client?' · '+s.client:''),fixed:true,isWedding:true};
+    });
+    rawEvts = fixedExps.concat(weddingEvts).concat(rawEvts);
     var cellDow=new Date(y,m,d).getDay();
     var fixedForDay=fixedBlocksForDay(cellDow).map(function(b){ return {time:b.from,text:b.lbl,fixed:true}; });
     var evts=sortEvts(fixedForDay.concat(rawEvts));
     var shown=evts.slice(0,2), more=evts.length-2;
     var evtHtml=shown.map(function(ev){
-      return '<div class="month-evt" style="'+(ev.fixed?'background:var(--bg2);border-left-color:var(--ink3);color:var(--ink3);':'')+'">'
+      var wStyle=ev.isWedding?'background:#f5ece2;border-left-color:#c4a882;color:#8b6040;':'';
+      return '<div class="month-evt" style="'+(ev.fixed&&!ev.isWedding?'background:var(--bg2);border-left-color:var(--ink3);color:var(--ink3);':wStyle)+'">'
         +(ev.time?ev.time+' ':'')+esc(ev.text)+'</div>';
     }).join('');
     var _pPhase=_periodMap[k]||null;
@@ -2082,15 +2091,37 @@ function drawWeddingScheduleHTML(){
         return n.trim()?'<span style="background:var(--bg3);border:1px solid var(--line);font-size:10px;padding:2px 7px;border-radius:10px;color:var(--ink2);">'+esc(n.trim())+'</span>':'';
       }).join('');
 
-      // 비고 (고객 정보)
+      // 고객 정보 + 금액 정보 표시
       var noteHtml='';
-      if(s.client||s.guests||s.pkg||s.note){
-        var noteParts=[];
-        if(s.client) noteParts.push('<span style="color:var(--ink2);">👤 '+esc(s.client)+'</span>');
-        if(s.guests) noteParts.push('<span style="color:var(--ink3);">보증 '+esc(s.guests)+'명</span>');
-        if(s.pkg)    noteParts.push('<span style="color:var(--ink3);">'+esc(s.pkg)+'</span>');
-        if(s.note)   noteParts.push('<span style="color:var(--ink3);">'+esc(s.note)+'</span>');
-        noteHtml='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:5px;padding:6px 8px;background:var(--bg2);font-size:11px;">'+noteParts.join('<span style="color:var(--line);">·</span>')+'</div>';
+      var infoRows=[];
+      // 고객 기본 정보
+      if(s.client||s.guests||s.pkg){
+        var row1=[];
+        if(s.client) row1.push('<span style="color:var(--ink2);">👤 '+esc(s.client)+'</span>');
+        if(s.guests) row1.push('<span style="color:var(--ink3);">보증 '+esc(s.guests)+'명</span>');
+        if(s.pkg)    row1.push('<span style="color:var(--ink3);">📦 '+esc(s.pkg)+'</span>');
+        infoRows.push(row1.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
+      }
+      // 금액 정보
+      if(s.total||s.deposit||s.balance||s.discount){
+        var row2=[];
+        if(s.total)    row2.push('<span style="color:var(--ink2);">💰 총 '+Number(s.total).toLocaleString()+'원</span>');
+        if(s.deposit)  row2.push('<span style="color:var(--ink3);">계약금 '+Number(s.deposit).toLocaleString()+'원</span>');
+        if(s.balance)  row2.push('<span style="color:var(--ink3);">잔금 '+Number(s.balance).toLocaleString()+'원</span>');
+        if(s.discount) row2.push('<span style="color:var(--accent2);">🎁 '+esc(s.discount)+'</span>');
+        infoRows.push(row2.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
+      }
+      // 블로그 후기 + 비고
+      var row3=[];
+      if(s.blogReview) row3.push('<span style="color:#6a9e6a;">✅ 블로그 후기 완료</span>');
+      else             row3.push('<span style="color:var(--ink3);">⬜ 블로그 후기 미완료</span>');
+      if(s.note)       row3.push('<span style="color:var(--ink3);">📝 '+esc(s.note)+'</span>');
+      if(row3.length)  infoRows.push(row3.join('<span style="color:var(--line);margin:0 4px;">·</span>'));
+
+      if(infoRows.length){
+        noteHtml='<div style="margin-top:6px;padding:8px 10px;background:var(--bg2);border-radius:4px;font-size:11px;display:flex;flex-direction:column;gap:5px;">'
+          +infoRows.map(function(r){return '<div>'+r+'</div>';}).join('')
+          +'</div>';
       }
 
       return '<div style="padding:10px 0;border-bottom:1px solid var(--bg2);">'
@@ -2149,9 +2180,9 @@ function drawWeddingScheduleHTML(){
     +'<input type="text" id="wsName" placeholder="예: 지수, 민지, 혜진" style="width:100%;">'
     +'</div>'
 
-    // 행 3: 고객 정보 (비고)
+    // 행 3: 고객 정보
     +'<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px;">'
-    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;letter-spacing:.1em;">고객 정보 (비고)</div>'
+    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;letter-spacing:.1em;">고객 정보</div>'
     +'<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:10px;margin-bottom:8px;">'
     +'<div>'
     +'<div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">고객명</div>'
@@ -2166,10 +2197,23 @@ function drawWeddingScheduleHTML(){
     +'<input type="text" id="wsPkg" placeholder="스탠다드, 프리미엄..." style="width:100%;">'
     +'</div>'
     +'</div>'
-    +'<div>'
-    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">추가 메모</div>'
-    +'<input type="text" id="wsNote" placeholder="기타 특이사항..." style="width:100%;">'
     +'</div>'
+    // 행 4: 금액 정보
+    +'<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:12px;">'
+    +'<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;letter-spacing:.1em;">금액 정보</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">총 서비스 금액</div><input type="number" id="wsTotal" placeholder="0" min="0" style="width:100%;"></div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">계약금</div><input type="number" id="wsDeposit" placeholder="0" min="0" style="width:100%;"></div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">잔금</div><input type="number" id="wsBalance" placeholder="0" min="0" style="width:100%;"></div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">할인혜택</div><input type="text" id="wsDiscount" placeholder="예: 10% 할인" style="width:100%;"></div>'
+    +'</div>'
+    +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--ink2);">'
+    +'<input type="checkbox" id="wsBlogReview" style="width:14px;height:14px;"> 블로그 후기 완료'
+    +'</label>'
+    +'</div>'
+    +'<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">비고</div>'
+    +'<input type="text" id="wsNote" placeholder="기타 특이사항..." style="width:100%;"></div>'
     +'</div>'
 
     +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
@@ -2215,15 +2259,21 @@ function addWS(){
   var client=($id('wsClient')||{value:''}).value.trim();
   var guests=($id('wsGuests')||{value:''}).value;
   var pkg=($id('wsPkg')||{value:''}).value.trim();
+  var total=($id('wsTotal')||{value:''}).value.trim();
+  var deposit=($id('wsDeposit')||{value:''}).value.trim();
+  var balance=($id('wsBalance')||{value:''}).value.trim();
+  var discount=($id('wsDiscount')||{value:''}).value.trim();
+  var blogReview=($id('wsBlogReview')||{checked:false}).checked;
   var note=($id('wsNote')||{value:''}).value.trim();
   if(!place&&!name){ alert('장소 또는 알바 이름을 입력해주세요'); return; }
   var data=getWS();
-  data.push({id:'ws'+Date.now(),date:date,time:time,place:place,count:count||'?',name:name,client:client,guests:guests,pkg:pkg,note:note});
+  data.push({id:'ws'+Date.now(),date:date,time:time,place:place,count:count||'?',name:name,client:client,guests:guests,pkg:pkg,total:total,deposit:deposit,balance:balance,discount:discount,blogReview:blogReview,note:note});
   data.sort(function(a,b){ return (a.date+a.time)<(b.date+b.time)?-1:1; });
   saveWS(data);
-  ['wsTime','wsPlace','wsCount','wsName','wsClient','wsGuests','wsPkg','wsNote'].forEach(function(id){
+  ['wsTime','wsPlace','wsCount','wsName','wsClient','wsGuests','wsPkg','wsTotal','wsDeposit','wsBalance','wsDiscount','wsNote'].forEach(function(id){
     if($id(id)) $id(id).value='';
   });
+  if($id('wsBlogReview')) $id('wsBlogReview').checked=false;
   toggleWSForm();
   drawProj();
 }
@@ -2256,7 +2306,21 @@ function editWS(id){
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">보증하객</div><input type="number" id="wsE_guests" value="'+esc(s.guests||'')+'" placeholder="명" style="width:100%;"></div>';
   html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">패키지</div><input type="text" id="wsE_pkg" value="'+esc(s.pkg||'')+'" placeholder="스탠다드..." style="width:100%;"></div>';
   html+='</div>';
-  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">추가 메모</div><input type="text" id="wsE_note" value="'+esc(s.note||'')+'" placeholder="기타 특이사항..." style="width:100%;"></div>';
+  html+='</div>';
+  html+='<div style="border-top:1px solid var(--line);padding-top:12px;margin-bottom:12px;">';
+  html+='<div style="font-size:10px;color:var(--ink3);margin-bottom:8px;">금액 정보</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px;">';
+  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">총 서비스 금액</div><input type="number" id="wsE_total" value="'+esc(s.total||'')+'" placeholder="0" style="width:100%;"></div>';
+  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">계약금</div><input type="number" id="wsE_deposit" value="'+esc(s.deposit||'')+'" placeholder="0" style="width:100%;"></div>';
+  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">잔금</div><input type="number" id="wsE_balance" value="'+esc(s.balance||'')+'" placeholder="0" style="width:100%;"></div>';
+  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">할인혜택</div><input type="text" id="wsE_discount" value="'+esc(s.discount||'')+'" placeholder="예: 10% 할인" style="width:100%;"></div>';
+  html+='</div>';
+  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">';
+  html+='<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--ink2);">';
+  html+='<input type="checkbox" id="wsE_blogReview"'+(s.blogReview?' checked':'')+' style="width:14px;height:14px;"> 블로그 후기 완료';
+  html+='</label>';
+  html+='</div>';
+  html+='<div><div style="font-size:10px;color:var(--ink3);margin-bottom:3px;">비고</div><input type="text" id="wsE_note" value="'+esc(s.note||'')+'" placeholder="기타 특이사항..." style="width:100%;"></div>';
   html+='</div>';
   html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
   html+='<button class="ghost" id="wsEditCancelBtn">취소</button>';
@@ -2279,6 +2343,11 @@ function editWS(id){
       client:($id('wsE_client').value||'').trim(),
       guests:($id('wsE_guests').value||'').trim(),
       pkg:($id('wsE_pkg').value||'').trim(),
+      total:($id('wsE_total').value||'').trim(),
+      deposit:($id('wsE_deposit').value||'').trim(),
+      balance:($id('wsE_balance').value||'').trim(),
+      discount:($id('wsE_discount').value||'').trim(),
+      blogReview:($id('wsE_blogReview')||{checked:false}).checked,
       note:($id('wsE_note').value||'').trim()
     };
     if(!updated.date){ alert('날짜를 입력해주세요'); return; }
@@ -2312,18 +2381,23 @@ function drawProjContent(tab){
     var listHtml = plans.length===0
       ? '<div style="font-size:13px;color:var(--ink3);padding:12px 0;">기획서를 작성해봐요 🎬</div>'
       : plans.map(function(x,i){
-          return '<div class="content-card">'
-            +'<div style="display:flex;align-items:flex-start;gap:10px;">'
+          var statusColor = x.status==='filming'?'#c4a882':x.status==='editing'?'#8a9e6a':'var(--ink3)';
+          var statusLabel = x.status==='filming'?'🎬 촬영중':x.status==='editing'?'✂️ 편집중':'📝 기획중';
+          return '<div class="content-card" style="padding:14px;margin-bottom:10px;border:1px solid var(--line);background:var(--paper);">'
+            +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;">'
             +'<div style="flex:1;">'
-            +'<div style="font-size:15px;color:var(--ink);margin-bottom:4px;">'+esc(x.title)+'</div>'
-            +(x.hook?'<div style="font-size:11px;color:var(--ink3);">훅: '+esc(x.hook)+'</div>':'')
-            +(x.outline?'<div style="font-size:11px;color:var(--ink3);margin-top:2px;">'+esc(x.outline)+'</div>':'')
+            +'<div style="font-size:15px;color:var(--ink);font-family:var(--serif,serif);margin-bottom:4px;">'+esc(x.title)+'</div>'
+            +(x.shootDate?'<div style="font-size:11px;color:var(--accent2);">📅 촬영일: '+esc(x.shootDate)+'</div>':'')
             +'</div>'
             +'<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;">'
             +'<button onclick="editProjCP('+i+')" class="ghost" style="font-size:10px;padding:3px 8px;">수정</button>'
             +'<button onclick="projCPDone('+i+')" class="ghost" style="font-size:10px;padding:3px 8px;">업로드✓</button>'
             +'<span class="del-btn" onclick="delProjCP('+i+')">×</span>'
-            +'</div></div></div>';
+            +'</div></div>'
+            +(x.hook?'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:6px;padding:6px 10px;background:var(--bg2);border-left:2px solid var(--accent2);font-size:12px;"><span style="font-size:10px;color:var(--ink3);flex-shrink:0;letter-spacing:.1em;">HOOK</span><span style="color:var(--ink2);">'+esc(x.hook)+'</span></div>':'')
+            +(x.outline?'<div style="font-size:12px;color:var(--ink2);line-height:1.6;padding:8px 10px;background:var(--bg2);white-space:pre-wrap;margin-bottom:6px;">'+esc(x.outline)+'</div>':'')
+            +(x.cta?'<div style="font-size:11px;color:var(--ink3);padding:4px 10px;border:1px dashed var(--line);display:inline-block;">CTA: '+esc(x.cta)+'</div>':'')
+            +'</div>';
         }).join('');
     body.innerHTML = addForm + listHtml;
     $id('pcpAddBtn').onclick = addProjCP;
@@ -2389,13 +2463,50 @@ function delProjCI(i){
 function editProjCP(i){
   var plans=G('contentPlans',[]);
   var active=plans.filter(function(x){return !x.done;}); var x=active[i];
-  var title=prompt('제목',x.title||''); if(title===null)return;
-  var hook=prompt('훅',x.hook||'');
-  var outline=prompt('구성',x.outline||'');
-  var cta=prompt('CTA',x.cta||'');
-  var shootDate=prompt('촬영일',x.shootDate||'');
-  Object.assign(x,{title:title.trim(),hook:hook||'',outline:outline||'',cta:cta||'',shootDate:shootDate||''});
-  S('contentPlans',plans); drawProjContent('plan');
+  if(!x) return;
+
+  var old=$id('cpEditModal'); if(old) old.remove();
+
+  var html='<div id="cpEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(520px,94vw);border:1px solid var(--line);max-height:90vh;overflow-y:auto;">';
+  html+='<div style="font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:16px;">기획서 수정</div>';
+  html+='<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:4px;letter-spacing:.1em;">영상 제목</div>';
+  html+='<input type="text" id="cpE_title" value="'+esc(x.title||'')+'" style="width:100%;"></div>';
+  html+='<div style="display:flex;gap:10px;margin-bottom:10px;">';
+  html+='<div style="flex:1;"><div style="font-size:10px;color:var(--ink3);margin-bottom:4px;letter-spacing:.1em;">훅 (첫 10초)</div>';
+  html+='<input type="text" id="cpE_hook" value="'+esc(x.hook||'')+'" placeholder="시청자를 잡는 첫 문장..." style="width:100%;"></div>';
+  html+='<div style="width:110px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:4px;letter-spacing:.1em;">촬영일</div>';
+  html+='<input type="text" id="cpE_shootDate" value="'+esc(x.shootDate||'')+'" placeholder="예: 3/25" style="width:100%;"></div>';
+  html+='</div>';
+  html+='<div style="margin-bottom:10px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:4px;letter-spacing:.1em;">구성 (개요)</div>';
+  html+='<textarea id="cpE_outline" placeholder="1. 인트로&#10;2. 본론&#10;3. 아웃트로" style="width:100%;min-height:100px;resize:vertical;display:block;">'+esc(x.outline||'')+'</textarea></div>';
+  html+='<div style="margin-bottom:16px;"><div style="font-size:10px;color:var(--ink3);margin-bottom:4px;letter-spacing:.1em;">CTA</div>';
+  html+='<input type="text" id="cpE_cta" value="'+esc(x.cta||'')+'" placeholder="구독, 좋아요, 댓글..." style="width:100%;"></div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html+='<button class="ghost" id="cpEditCancelBtn">취소</button>';
+  html+='<button id="cpEditSaveBtn">저장</button>';
+  html+='</div></div></div>';
+
+  var wrap=document.createElement('div');
+  wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+
+  $id('cpEditCancelBtn').onclick=function(){ $id('cpEditModal').remove(); };
+  $id('cpEditModal').onclick=function(e){ if(e.target===$id('cpEditModal')) $id('cpEditModal').remove(); };
+  $id('cpEditSaveBtn').onclick=function(){
+    var title=$id('cpE_title').value.trim(); if(!title){ alert('제목을 입력해주세요'); return; }
+    Object.assign(x,{
+      title:title,
+      hook:$id('cpE_hook').value.trim(),
+      shootDate:$id('cpE_shootDate').value.trim(),
+      outline:$id('cpE_outline').value.trim(),
+      cta:$id('cpE_cta').value.trim()
+    });
+    S('contentPlans',plans);
+    $id('cpEditModal').remove();
+    drawProjContent('plan');
+  };
+  setTimeout(function(){ var el=$id('cpE_title'); if(el){ el.focus(); el.select(); } },60);
 }
 function addProjTask(p){
   var el=$id('projTaskInput'), t=el.value.trim(); if(!t)return;
@@ -3110,9 +3221,12 @@ function getRevGoals(){ return G('revGoals',{}); }
 function saveRevGoal(key,val){ var g=getRevGoals(); g[key]=val; S('revGoals',g); }
 function drawRevenue(){
   var revData=G('revData',{}), goals=getRevGoals();
+  var now=new Date(), curYm=now.getFullYear()+'-'+pad(now.getMonth()+1);
   $id('revGrid').innerHTML=REV_PROJS_DEF.map(function(rp){
     var goal=goals[rp.key]||rp.defaultGoal;
-    var entries=(revData[rp.key]||[]);
+    var allEntries=(revData[rp.key]||[]);
+    // 이번 달 항목만 집계 (ym 필드 없는 구 데이터는 모두 포함)
+    var entries=allEntries.filter(function(e){ return !e.ym || e.ym===curYm; });
     var total=entries.reduce(function(s,e){return s+(e.type==='in'?e.amt:-e.amt);},0);
     var pct=Math.min(100,goal>0?Math.round(Math.max(0,total)/goal*100):0);
     var entryHtml=entries.slice(0,5).map(function(e){
@@ -3175,11 +3289,11 @@ function addRevEntry(key){
     var hhCat=rp?rp.hhCat:'부업수입';
     var items=G('household',[]);
     var ym=d.getFullYear()+'-'+pad(d.getMonth()+1);
-    hhId=entryId+1;
-    items.unshift({id:hhId,type:'in',amt:amt,cat:hhCat,memo:memo||rp.name,ym:ym,date:(d.getMonth()+1)+'/'+d.getDate(),fromRev:true,revKey:key,revId:entryId});
+    hhId='rev_hh_'+entryId;
+    items.unshift({id:hhId,type:'in',amt:amt,cat:hhCat,memo:memo||(rp?rp.name:key),ym:ym,date:(d.getMonth()+1)+'/'+d.getDate(),fromRev:true,revKey:key,revId:entryId});
     S('household',items);
   }
-  revData[key].unshift({id:entryId,type:type,amt:amt,memo:memo,date:(d.getMonth()+1)+'/'+d.getDate(),hhId:hhId});
+  revData[key].unshift({id:entryId,type:type,amt:amt,memo:memo,date:(d.getMonth()+1)+'/'+d.getDate(),ym:d.getFullYear()+'-'+pad(d.getMonth()+1),hhId:hhId});
   S('revData',revData);
   $id('revAmt_'+key).value=''; $id('revMemo_'+key).value='';
   drawRevenue(); bindRevEvents();
@@ -3196,7 +3310,7 @@ function delRevEntry(key,id){
     S('household',items);
   }
   if(revData[key]) revData[key]=revData[key].filter(function(x){return x.id!==id;});
-  S('revData',revData); drawRevenue();
+  S('revData',revData); drawRevenue(); bindRevEvents();
 }
 
 // ══════ HOUSEHOLD (가계부) ══════
@@ -4563,7 +4677,7 @@ function init(){
   drawTodos();
   drawHabits();
   drawEnergy();
-  drawRevenue();
+  drawRevenue(); bindRevEvents();
   drawRoutines();
   drawGoals();
   drawWeek();
