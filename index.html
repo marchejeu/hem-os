@@ -1355,6 +1355,7 @@ button.ghost:hover{background:var(--bg2);color:var(--ink);}
 </div>
 
 <script>
+//<![CDATA[
 // ══════ STORAGE ══════
 function S(k,v){ try{ localStorage.setItem('h_'+k, JSON.stringify(v)); }catch(e){} }
 function G(k,d){ try{ var v=localStorage.getItem('h_'+k); return v===null?d:JSON.parse(v); }catch(e){ return d; } }
@@ -6097,6 +6098,7 @@ document.addEventListener('visibilitychange', function(){
 });
 
 openIDB(init);
+//]]>
 </script>
 
 <script>
