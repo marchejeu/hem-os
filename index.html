@@ -5253,20 +5253,16 @@ var kakaoPlacesReady = false;
 var kakaoReadyCbs = [];
 
 function loadKakaoScript(cb){
-  if(kakaoPlacesReady && window.kakao && window.kakao.maps && window.kakao.maps.services){
-    cb(); return;
-  }
+  if(kakaoPlacesReady){ cb(); return; }
   kakaoReadyCbs.push(cb);
-  if(kakaoPlacesLoaded) return; // 이미 로딩 중 — 콜백만 쌓아두고 대기
+  if(kakaoPlacesLoaded) return;
   kakaoPlacesLoaded = true;
   var s = document.createElement('script');
-  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey='+KAKAO_JS_KEY+'&libraries=services&autoload=false';
+  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey='+KAKAO_JS_KEY+'&libraries=services';
   s.onload = function(){
-    window.kakao.maps.load(function(){
-      kakaoPlacesReady = true;
-      kakaoReadyCbs.forEach(function(fn){ fn(); });
-      kakaoReadyCbs = [];
-    });
+    kakaoPlacesReady = true;
+    kakaoReadyCbs.forEach(function(fn){ fn(); });
+    kakaoReadyCbs = [];
   };
   s.onerror = function(){ console.error('카카오 스크립트 로드 실패'); };
   document.head.appendChild(s);
