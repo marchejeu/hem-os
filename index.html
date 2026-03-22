@@ -5873,12 +5873,12 @@ function drawMoodChart(){
   var worstDow = DOWS[avgs.indexOf(Math.min.apply(null,avgs.filter(function(a){return a>0;})))];
 
   var insights = [
-    '📅 <b>'+monthData.length+'일</b> 기록 완료 (이번 달 '+dim+'일 중)',
-    '⚡ 평균 에너지 <b>'+avgLv.toFixed(1)+'/5</b>',
-    '🌟 에너지 높은 날 <b>'+highDays+'일</b>' + (lowDays ? ', 낮은 날 <b>'+lowDays+'일</b>' : ''),
-    topMood ? '❤️ 가장 자주 느낀 감정 <b>'+topMood+'</b>' : '',
-    bestDow ? '📈 에너지 제일 좋은 요일 <b>'+bestDow+'요일</b>' : '',
-    worstDow && worstDow !== bestDow ? '📉 에너지 낮은 요일 <b>'+worstDow+'요일</b>' : '',
+    '📅 \x3cb\x3e'+monthData.length+'일\x3c/b\x3e 기록 완료 (이번 달 '+dim+'일 중)',
+    '⚡ 평균 에너지 \x3cb\x3e'+avgLv.toFixed(1)+'/5\x3c/b\x3e',
+    '🌟 에너지 높은 날 \x3cb\x3e'+highDays+'일\x3c/b\x3e' + (lowDays ? ', 낮은 날 \x3cb\x3e'+lowDays+'일\x3c/b\x3e' : ''),
+    topMood ? '❤️ 가장 자주 느낀 감정 \x3cb\x3e'+topMood+'\x3c/b\x3e' : '',
+    bestDow ? '📈 에너지 제일 좋은 요일 \x3cb\x3e'+bestDow+'요일\x3c/b\x3e' : '',
+    worstDow && worstDow !== bestDow ? '📉 에너지 낮은 요일 \x3cb\x3e'+worstDow+'요일\x3c/b\x3e' : '',
   ].filter(Boolean);
   if($id('moodInsight')) $id('moodInsight').innerHTML = insights.map(function(t){
     return '<div style="padding:5px 0;border-bottom:1px solid var(--bg2);">'+t+'</div>';
@@ -6036,7 +6036,7 @@ function renderSearch(q){
   // 하이라이트 함수
   function hl(str){
     var s=esc(str||'');
-    return s.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark style="background:#f5e6a3;color:var(--ink);">$1</mark>');
+    return s.replace(new RegExp('('+q.split('').map(function(c){return c.replace(/[.*+?^${}()|\[\]\\]/,'\\\\$&');}).join('')+')','gi'),'<mark style="background:#f5e6a3;color:var(--ink);">$1\x3c/mark\x3e');
   }
 
   res.innerHTML='<div style="padding:6px 16px 4px;font-size:10px;color:var(--ink3);letter-spacing:.1em;">'+hits.length+'개 결과</div>'
