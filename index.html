@@ -5132,6 +5132,7 @@ function editRec(i){
 }
 
 // ══════ GOEC PLACES ══════
+var KAKAO_JS_KEY = '54b701cc332c8202c08b2cdbc62692c9';
 var PLACE_CATS = ['전체','☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'];
 var placeSelCat = null;
 var placePhotoData = null;
@@ -5160,14 +5161,17 @@ function drawGoecPlaces(){
   var formHtml='<div class="compose-box" style="margin-bottom:20px;">'
     +'<div class="card-title" style="margin-bottom:12px;">새 플레이스 추가</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">'
-    +'<input type="text" id="placeTitle" class="flex1" placeholder="장소 이름...">'
+    +'<div style="flex:1;position:relative;">'
+    +'<input type="text" id="placeTitle" class="flex1" placeholder="장소 이름으로 검색..." style="width:100%;" autocomplete="off" oninput="searchKakaoPlace(this.value)">'
+    +'<div id="placeSearchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--paper);border:1px solid var(--line);z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);"></div>'
+    +'</div>'
     +'<select id="placeCat" style="width:130px;">'
     +['☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'].map(function(c){
         return '<option value="'+c+'">'+c+'</option>';
       }).join('')
     +'</select>'
     +'</div>'
-    +'<input type="text" id="placeAddr" placeholder="주소 또는 위치 힌트..." style="width:100%;margin-bottom:8px;">'
+    +'<input type="text" id="placeAddr" placeholder="주소 (검색하면 자동 입력)" style="width:100%;margin-bottom:8px;" readonly>'
     +'<textarea id="placeMemo" placeholder="메모 (분위기, 추천 메뉴, 이유...)" style="width:100%;min-height:60px;resize:vertical;display:block;margin-bottom:8px;"></textarea>'
     +'<div style="display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;">'
     +'<div style="display:flex;align-items:center;gap:8px;">'
@@ -5243,6 +5247,72 @@ function drawGoecPlaces(){
 function setPlaceCat(c){
   placeSelCat=c; drawGoecPlaces();
 }
+// 카카오 장소 검색
+var kakaoPlacesLoaded = false;
+function loadKakaoScript(cb){
+  if(window.kakao && window.kakao.maps && window.kakao.maps.services){ cb(); return; }
+  if(kakaoPlacesLoaded){ setTimeout(cb, 300); return; }
+  kakaoPlacesLoaded = true;
+  var s = document.createElement('script');
+  s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey='+KAKAO_JS_KEY+'&libraries=services&autoload=false';
+  s.onload = function(){
+    kakao.maps.load(function(){ cb(); });
+  };
+  document.head.appendChild(s);
+}
+
+var placeSearchTimer = null;
+function searchKakaoPlace(query){
+  var dd = $id('placeSearchDropdown');
+  if(!dd) return;
+  if(!query || query.length < 2){ dd.style.display='none'; return; }
+  clearTimeout(placeSearchTimer);
+  placeSearchTimer = setTimeout(function(){
+    loadKakaoScript(function(){
+      var ps = new kakao.maps.services.Places();
+      ps.keywordSearch(query, function(data, status){
+        if(status !== kakao.maps.services.Status.OK || !data.length){
+          dd.style.display='none'; return;
+        }
+        window._kakaoPlaceResults = data.slice(0,6);
+        dd.style.display='block';
+        dd.innerHTML = window._kakaoPlaceResults.map(function(p,idx){
+          return '<div onclick="selectKakaoPlace('+idx+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--bg2);" onmouseenter="this.style.background=\'var(--bg2)\'" onmouseleave="this.style.background=\'\'">'
+            +'<div style="font-size:13px;color:var(--ink);">'+esc(p.place_name)+'</div>'
+            +'<div style="font-size:11px;color:var(--ink3);margin-top:2px;">'+esc(p.address_name)+'</div>'
+            +(p.category_group_name?'<div style="font-size:10px;color:var(--accent2);margin-top:1px;">'+esc(p.category_group_name)+'</div>':'')
+            +'</div>';
+        }).join('');
+      });
+    });
+  }, 300);
+}
+
+function selectKakaoPlace(idx){
+  var results = window._kakaoPlaceResults;
+  if(!results || !results[idx]) return;
+  var p = results[idx];
+  var titleEl=$id('placeTitle'), addrEl=$id('placeAddr');
+  if(titleEl) titleEl.value = p.place_name;
+  if(addrEl){ addrEl.value = p.address_name; addrEl.readOnly = false; }
+  var catEl=$id('placeCat');
+  if(catEl && p.category_group_name){
+    var cat=p.category_group_name;
+    var catMap={'카페':'☕ 카페','음식점':'🍽 맛집','도서관':'📚 도서관','문화시설':'🎨 전시·팝업','쇼핑':'🛍 쇼핑','공원':'🌿 공원·산책'};
+    Object.keys(catMap).forEach(function(k){ if(cat.includes(k)) catEl.value=catMap[k]; });
+  }
+  window._pendingPlaceLat = parseFloat(p.y);
+  window._pendingPlaceLng = parseFloat(p.x);
+  var dd=$id('placeSearchDropdown'); if(dd) dd.style.display='none';
+}
+// 드롭다운 외부 클릭 시 닫기
+document.addEventListener('click', function(e){
+  var dd=$id('placeSearchDropdown');
+  if(dd && !dd.contains(e.target) && e.target.id!=='placeTitle'){
+    dd.style.display='none';
+  }
+});
+
 function addPlace(){
   var title=($id('placeTitle')||{value:''}).value.trim(); if(!title) return;
   var items=G('goecPlaces',[]);
@@ -5253,10 +5323,13 @@ function addPlace(){
     addr:($id('placeAddr')||{value:''}).value.trim(),
     memo:($id('placeMemo')||{value:''}).value.trim(),
     photo:placePhotoData||null,
+    lat:window._pendingPlaceLat||null,
+    lng:window._pendingPlaceLng||null,
     visited:false
   });
   S('goecPlaces',items);
   ['placeTitle','placeAddr','placeMemo'].forEach(function(id){ if($id(id)) $id(id).value=''; });
+  window._pendingPlaceLat=null; window._pendingPlaceLng=null;
   placePhotoData=null;
   var lbl=$id('placePhotoLabel'); if(lbl) lbl.textContent='';
   var fi=$id('placeFileInput'); if(fi) fi.value='';
@@ -5267,6 +5340,58 @@ function togPlaceVisited(i){
 }
 function delPlace(i){
   var items=G('goecPlaces',[]); items.splice(i,1); S('goecPlaces',items); drawGoecPlaces();
+}
+function editPlace(i){
+  var items=G('goecPlaces',[]), x=items[i]; if(!x) return;
+  var old=$id('placeEditModal'); if(old) old.remove();
+  var editPhoto=x.photo||null;
+  var html='<div id="placeEditModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;">';
+  html+='<div style="background:var(--paper);padding:24px;width:min(480px,94vw);border:1px solid var(--line);max-height:92vh;overflow-y:auto;">';
+  html+='<div style="font-size:13px;letter-spacing:.15em;text-transform:uppercase;color:var(--ink3);margin-bottom:14px;">플레이스 수정</div>';
+  html+='<div style="display:flex;gap:8px;margin-bottom:8px;">';
+  html+='<input type="text" id="placeE_title" value="'+esc(x.title||'')+'" class="flex1">';
+  html+='<select id="placeE_cat" style="width:130px;">';
+  ['☕ 카페','🍽 맛집','📚 도서관','🎨 전시·팝업','🛍 쇼핑','🌿 공원·산책','기타'].forEach(function(c){
+    html+='<option value="'+c+'"'+(x.cat===c?' selected':'')+'>'+c+'</option>';
+  });
+  html+='</select></div>';
+  html+='<input type="text" id="placeE_addr" value="'+esc(x.addr||'')+'" placeholder="주소..." style="width:100%;margin-bottom:8px;">';
+  html+='<textarea id="placeE_memo" style="width:100%;min-height:80px;resize:vertical;display:block;margin-bottom:8px;">'+esc(x.memo||'')+'</textarea>';
+  html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">';
+  html+=(x.photo?'<img id="placeE_photoPreview" src="'+x.photo+'" style="width:60px;height:60px;object-fit:cover;border-radius:4px;">':'<div id="placeE_photoPreview" style="width:60px;height:60px;background:var(--bg2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:22px;">📍</div>');
+  html+='<div><div class="img-drop-zone" style="margin:0;padding:7px 12px;font-size:11px;"><input type="file" accept="image/*" id="placeE_fileInput">📷 사진 변경</div>';
+  if(x.photo) html+='<span onclick="clearPlaceEditPhoto()" style="font-size:11px;color:var(--ink3);cursor:pointer;display:block;margin-top:4px;">🗑 사진 제거</span>';
+  html+='</div></div>';
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;">';
+  html+='<button class="ghost" onclick="document.getElementById(\'placeEditModal\').remove()">취소</button>';
+  html+='<button id="placeESaveBtn">저장</button>';
+  html+='</div></div></div>';
+  var wrap=document.createElement('div'); wrap.innerHTML=html;
+  document.body.appendChild(wrap.firstChild);
+  var fi=$id('placeE_fileInput');
+  if(fi) fi.onchange=function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      editPhoto=ev.target.result;
+      var p=$id('placeE_photoPreview');
+      if(p){ if(p.tagName==='IMG'){p.src=editPhoto;}else{var img=document.createElement('img');img.id='placeE_photoPreview';img.src=editPhoto;img.style.cssText='width:60px;height:60px;object-fit:cover;border-radius:4px;';p.parentNode.replaceChild(img,p);} }
+    };
+    reader.readAsDataURL(file);
+  };
+  window.clearPlaceEditPhoto=function(){ editPhoto=null; var p=$id('placeE_photoPreview'); if(p&&p.tagName==='IMG'){ p.src=''; } };
+  $id('placeESaveBtn').onclick=function(){
+    var title=$id('placeE_title').value.trim(); if(!title){alert('장소 이름을 입력해주세요');return;}
+    items[i]=Object.assign({},x,{
+      title:title,
+      cat:$id('placeE_cat').value,
+      addr:$id('placeE_addr').value.trim(),
+      memo:$id('placeE_memo').value.trim(),
+      photo:editPhoto
+    });
+    S('goecPlaces',items); $id('placeEditModal').remove(); drawGoecPlaces();
+  };
+  setTimeout(function(){ var el=$id('placeE_title'); if(el){el.focus();el.select();} },60);
 }
 
 // 개별 지도 보기 — 네이버 지도 앱/웹으로 연결
@@ -5362,34 +5487,44 @@ function suggestDayCourse(){
 function renderDayCoursesByCat(items){
   var el=$id('dayCourseContent'); if(!el) return;
 
-  // 카테고리별 그룹핑
-  var byAddr={};
-  items.forEach(function(x){
-    // 주소 앞 2단어(동네)로 그룹핑 시도
-    var key='기타';
-    if(x.addr){
-      var parts=x.addr.trim().split(/\s+/);
-      // 구/동 단위로 묶기
-      var addrKey=parts.slice(0,2).join(' ');
-      key=addrKey||'기타';
-    }
-    if(!byAddr[key]) byAddr[key]=[];
-    byAddr[key].push(x);
-  });
-
-  // 2개 이상 묶인 그룹을 코스로
+  var withCoords=items.filter(function(x){return x.lat&&x.lng;});
+  var withoutCoords=items.filter(function(x){return !x.lat||!x.lng;});
   var courses=[];
-  Object.keys(byAddr).forEach(function(k){
-    if(byAddr[k].length>=2) courses.push({area:k, places:byAddr[k].slice(0,4)});
-  });
 
-  // 그룹이 없으면 카테고리 기반으로 랜덤 추천
+  if(withCoords.length>=2){
+    var used=withCoords.map(function(){return false;});
+    var MAX_KM=3;
+    for(var i=0;i<withCoords.length;i++){
+      if(used[i]) continue;
+      var course=[withCoords[i]]; used[i]=true;
+      for(var j=0;j<withCoords.length;j++){
+        if(used[j]||course.length>=4) continue;
+        var d=calcDistSimple(course[0].lat,course[0].lng,withCoords[j].lat,withCoords[j].lng);
+        if(d<=MAX_KM){course.push(withCoords[j]);used[j]=true;}
+      }
+      if(course.length>=2) courses.push({area:'',places:course,hasCoords:true});
+    }
+    withoutCoords.forEach(function(x){
+      if(x.addr){var parts=x.addr.split(/\s+/);courses.push({area:parts.slice(0,2).join(' '),places:[x],hasCoords:false});}
+    });
+  } else {
+    var byArea={};
+    items.forEach(function(x){
+      var key='기타';
+      if(x.addr){var parts=x.addr.trim().split(/\s+/);key=parts.slice(0,2).join(' ')||'기타';}
+      if(!byArea[key]) byArea[key]=[];
+      byArea[key].push(x);
+    });
+    Object.keys(byArea).forEach(function(k){
+      if(byArea[k].length>=2) courses.push({area:k,places:byArea[k].slice(0,4),hasCoords:false});
+    });
+  }
+
   if(courses.length===0){
-    // 3~4개씩 섞어서 코스 구성
-    var shuffled=items.slice().sort(function(){ return Math.random()-.5; });
+    var shuffled=items.slice().sort(function(){return Math.random()-.5;});
     for(var k=0;k<shuffled.length;k+=3){
       var chunk=shuffled.slice(k,k+3);
-      if(chunk.length>=2) courses.push({area:'추천 코스', places:chunk});
+      if(chunk.length>=2) courses.push({area:'',places:chunk,hasCoords:false});
     }
   }
 
@@ -5398,35 +5533,56 @@ function renderDayCoursesByCat(items){
     return;
   }
 
-  var html='<div style="font-size:11px;color:var(--ink3);margin-bottom:16px;">같은 동네 장소끼리 묶었어요 😊 주소를 입력하면 더 정확해져요!</div>';
+  var coordCount=withCoords.length;
+  var html='<div style="font-size:11px;color:var(--ink3);margin-bottom:16px;">'
+    +(coordCount>0?'좌표가 저장된 '+coordCount+'곳을 거리 기준으로 묶었어요 😊':'장소 검색으로 추가하면 거리 기준으로 더 정확히 묶어드려요!')
+    +'</div>';
 
   courses.forEach(function(course,ci){
-    var naverUrl='https://map.naver.com/v5/search/'+encodeURIComponent(course.places[0].addr||course.places[0].title);
+    var dist='';
+    if(course.hasCoords&&course.places.length>=2){
+      var total=0;
+      for(var i=1;i<course.places.length;i++){
+        total+=calcDistSimple(course.places[i-1].lat,course.places[i-1].lng,course.places[i].lat,course.places[i].lng);
+      }
+      dist='약 '+total.toFixed(1)+'km';
+    }
+    var firstAddr=course.places[0].addr||course.places[0].title;
+    var firstTitle=course.places[0].title;
+    var naverUrl='https://map.naver.com/v5/search/'+encodeURIComponent(firstTitle+(firstAddr?' '+firstAddr:''));
+    var kakaoUrl='https://map.kakao.com/?q='+encodeURIComponent(firstTitle+(firstAddr?' '+firstAddr:''));
+
     html+='<div style="padding:16px;margin-bottom:12px;border:1px solid var(--line);background:var(--paper);">';
     html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
-    html+='<div style="font-size:13px;color:var(--ink2);font-family:\'Cormorant Garamond\',serif;">코스 '+(ci+1)+(course.area!=='추천 코스'?' · '+course.area:'')+'</div>';
-    html+='<span style="font-size:10px;color:var(--ink3);">'+course.places.length+'곳</span>';
+    html+='<div style="font-size:13px;color:var(--ink2);font-family:\'Cormorant Garamond\',serif;">코스 '+(ci+1)+(course.area?' · '+course.area:'')+'</div>';
+    html+='<span style="font-size:10px;color:var(--ink3);">'+(dist||course.places.length+'곳')+'</span>';
     html+='</div>';
     course.places.forEach(function(x,pi){
       var catIcon=x.cat?x.cat.split(' ')[0]:'📍';
-      html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
-      if(pi>0) html=''+html.slice(0,-0)+''; // 연결선
-      html+='<span style="font-size:18px;flex-shrink:0;">'+catIcon+'</span>';
-      html+='<div style="flex:1;">';
-      html+='<div style="font-size:13px;color:var(--ink);">'+esc(x.title)+'</div>';
-      if(x.addr) html+='<div style="font-size:11px;color:var(--ink3);">'+esc(x.addr)+'</div>';
-      html+='</div></div>';
-      if(pi<course.places.length-1){
-        html+='<div style="margin-left:9px;width:2px;height:12px;background:var(--line);margin-bottom:4px;"></div>';
-      }
+      html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+        +'<span style="font-size:18px;flex-shrink:0;">'+catIcon+'</span>'
+        +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:13px;color:var(--ink);">'+esc(x.title)+'</div>'
+        +(x.addr?'<div style="font-size:11px;color:var(--ink3);">'+esc(x.addr)+'</div>':'')
+        +'</div></div>';
+      if(pi<course.places.length-1)
+        html+='<div style="margin-left:9px;width:2px;height:10px;background:var(--line);margin-bottom:4px;"></div>';
     });
     html+='<div style="display:flex;gap:6px;margin-top:12px;">';
-    html+='<a href="'+naverUrl+'" target="_blank" style="flex:1;text-align:center;padding:7px;background:#e8f5e9;border:1px solid #7a9e7e;color:#3d6e42;font-size:11px;text-decoration:none;border-radius:2px;">🗺 네이버 지도로 보기</a>';
-    html+='<a href="https://map.kakao.com/?q='+encodeURIComponent(course.places[0].addr||course.places[0].title)+'" target="_blank" style="flex:1;text-align:center;padding:7px;background:#fef5cc;border:1px solid #e6c84a;color:#7a6000;font-size:11px;text-decoration:none;border-radius:2px;">카카오맵으로 보기</a>';
+    html+='<a href="'+naverUrl+'" target="_blank" style="flex:1;text-align:center;padding:7px;background:#e8f5e9;border:1px solid #7a9e7e;color:#3d6e42;font-size:11px;text-decoration:none;border-radius:2px;">🗺 네이버</a>';
+    html+='<a href="'+kakaoUrl+'" target="_blank" style="flex:1;text-align:center;padding:7px;background:#fef5cc;border:1px solid #e6c84a;color:#7a6000;font-size:11px;text-decoration:none;border-radius:2px;">카카오맵</a>';
     html+='</div></div>';
   });
 
   el.innerHTML=html;
+}
+
+function calcDistSimple(lat1,lng1,lat2,lng2){
+  var R=6371;
+  var dLat=(lat2-lat1)*Math.PI/180;
+  var dLng=(lng2-lng1)*Math.PI/180;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
 // ══════ HOUSEHOLD TAB ══════
